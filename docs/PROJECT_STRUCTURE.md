@@ -1,26 +1,10 @@
-# ParkClean VR 项目结构设计
+# ParkClean VR 项目结构设计大纲
 
-## 1. 文档定位
-
-本文档描述 ParkClean VR 在 V0.3 阶段的工程结构设计。重点是让三名开发可以分模块开发、减少冲突，并让当前已导入的 MVP 模型资源能被清晰接入。
-
-V0.3 阶段不追求一次性整理成最终工程结构。原则是：
-
-- 现有可用资源不大规模搬迁。
-- 新增 V0.3 代码放入清晰目录。
-- 新增模型资源放入 `Assets/Art/`。
-- 后续 Prefab、数据和脚本逐步规范化。
-
-## 2. 当前真实结构
-
-当前项目是 Unity 工程，已有基础目录：
+## 1. 当前项目结构概览
 
 ```text
 vr-waste-sorting/
 ├── Assets/
-│   ├── Art/
-│   │   ├── GarbageItems/
-│   │   └── TrashBins/
 │   ├── CubexCube - Free City Pack I/
 │   ├── Low poly Garbage Pack/
 │   ├── POLYGON city pack/
@@ -30,415 +14,96 @@ vr-waste-sorting/
 │   └── Textrues/
 ├── Packages/
 ├── ProjectSettings/
-├── README.md
 └── docs/
     ├── PRD.md
     ├── PROJECT_STRUCTURE.md
     ├── design/
-    └── plan/
+    └── 使用AI生成3D模型并导入Unity.md
 ```
 
-说明：
+当前工程具备 Unity 项目的基本结构，已有场景、脚本、声音、城市环境资源、低多边形垃圾资源和四分类垃圾桶模型。现有脚本偏向清扫 Demo，需要逐步重构为垃圾分类系统。
 
-- `Assets/Art/` 是 V0.3 新增模型资源目录。
-- 原 `3D-Model/` 中的 MVP 模型已按规范移动到 `Assets/Art/`。
-- 旧脚本仍在 `Assets/Scripts/` 根目录，可作为参考，但不建议继续堆新逻辑。
+## 2. 当前脚本现状
 
-## 3. 当前资产落位
+| 文件 | 当前职责 | 重构方向 |
+| --- | --- | --- |
+| `Assets/Scripts/Player.cs` | 玩家移动、鼠标视角、跳跃、倒计时、清理计数、胜负面板 | 拆分为玩家控制、任务计时、UI 展示，不再让 Player 承担全部逻辑 |
+| `Assets/Scripts/Garbage.cs` | 鼠标点击垃圾后计数、播放音效、销毁物体 | 重构为垃圾物品数据组件，记录分类、解释、初始位置和状态 |
+| `Assets/Scripts/SceneController.cs` | 场景切换、退出游戏 | 保留为场景流程控制的一部分 |
 
-### 3.1 垃圾模型
+## 3. 推荐目标目录结构
 
-目录：
-
-```text
-Assets/Art/GarbageItems/
-```
-
-文件：
-
-```text
-garbage_aluminum_can.glb
-garbage_battery.glb
-garbage_cardboard_box.glb
-garbage_dirty_tissue.glb
-garbage_expired_medicine.glb
-garbage_fruit_peel.glb
-garbage_lamp_tube.glb
-garbage_leftover_rice.glb
-garbage_milk_tea_cup.glb
-garbage_oily_takeout_box.glb
-garbage_plastic_bottle.glb
-garbage_vegetable_leaf.glb
-```
-
-### 3.2 垃圾桶模型
-
-目录：
-
-```text
-Assets/Art/TrashBins/
-```
-
-文件：
-
-```text
-bin_hazardous_red.glb
-bin_kitchen_green.glb
-bin_other_gray.glb
-bin_recyclable_blue.glb
-References/trash_bin_reference.webp
-```
-
-## 4. V0.3 目标结构
-
-V0.3 推荐逐步形成以下结构：
+后续重构建议逐步演进到以下结构：
 
 ```text
 Assets/
 ├── Art/
+│   ├── Environment/
 │   ├── GarbageItems/
 │   ├── TrashBins/
-│   ├── Environment/
-│   ├── UI/
-│   └── FX/
+│   └── UI/
+├── Audio/
+│   ├── SFX/
+│   └── Music/
+├── Data/
+│   ├── GarbageItems/
+│   ├── Levels/
+│   └── Rules/
+├── Materials/
 ├── Prefabs/
+│   ├── Environment/
 │   ├── GarbageItems/
 │   ├── TrashBins/
-│   ├── Environment/
+│   ├── Player/
 │   └── UI/
 ├── Scenes/
+│   ├── MainMenu.unity
+│   ├── Canteen_MVP.unity
+│   └── Community_MVP.unity
 ├── Scripts/
-│   ├── Gameplay/
-│   ├── Player/
-│   ├── Interaction/
 │   ├── Core/
+│   ├── Data/
+│   ├── Gameplay/
+│   ├── Interaction/
+│   ├── Feedback/
 │   ├── UI/
-│   └── Analytics/
-└── Sounds/
+│   ├── Analytics/
+│   └── Utils/
+└── XR/
+    ├── Input/
+    └── Rig/
 ```
 
-本阶段可先创建用到的目录，不强制一次性补齐所有目录。
+如果当前资源量较少，不需要一次性移动全部文件。优先完成脚本和 Prefab 的职责拆分，资源目录可以随着开发逐步整理。
 
-## 5. 脚本分区
+## 4. 核心脚本模块设计
 
-### 5.1 Gameplay
+### 4.1 Core
 
-路径：
+职责：管理游戏主流程和全局状态。
 
-```text
-Assets/Scripts/Gameplay/
-```
+建议脚本：
 
-负责人：开发 A。
+| 脚本 | 职责 |
+| --- | --- |
+| `GameManager.cs` | 控制开始、进行中、暂停、结算等状态 |
+| `LevelManager.cs` | 加载关卡配置、生成垃圾、初始化垃圾桶 |
+| `SceneFlowController.cs` | 场景切换、重新开始、退出 |
 
-职责：
+### 4.2 Data
 
-- 垃圾分类枚举。
-- 垃圾物品组件。
-- 垃圾桶组件。
-- 投放触发区。
-- 分类结果结构。
-- 分类事件出口。
+职责：定义可配置数据结构，避免把分类规则写死在 MonoBehaviour 中。
 
-建议文件：
+建议脚本或资源：
 
-```text
-WasteCategory.cs
-GarbageItem.cs
-TrashBin.cs
-DropZone.cs
-ClassificationResult.cs
-ClassificationEvents.cs
-```
+| 名称 | 职责 |
+| --- | --- |
+| `WasteCategory.cs` | 定义四类垃圾枚举 |
+| `GarbageItemData.cs` | 定义垃圾名称、分类、难度、解释、Prefab |
+| `LevelData.cs` | 定义关卡场景、倒计时、垃圾清单、目标数量 |
+| `FeedbackTextData.cs` | 管理正确和错误提示文案 |
 
-边界：
-
-- 不处理键鼠输入。
-- 不处理 UI 结算。
-- 不直接修改任务分数。
-
-### 5.2 Player
-
-路径：
-
-```text
-Assets/Scripts/Player/
-```
-
-负责人：开发 B。
-
-职责：
-
-- WASD 移动。
-- 鼠标视角。
-- 玩家摄像机控制。
-
-建议文件：
-
-```text
-PlayerController.cs
-```
-
-边界：
-
-- 不放倒计时。
-- 不放分类判定。
-- 不放结算 UI。
-
-### 5.3 Interaction
-
-路径：
-
-```text
-Assets/Scripts/Interaction/
-```
-
-负责人：开发 B。
-
-职责：
-
-- 鼠标射线选中。
-- 垃圾高亮。
-- 抓取和释放。
-- 和 `GarbageItem` 状态对接。
-
-建议文件：
-
-```text
-DesktopGarbageInteractor.cs
-SelectableHighlighter.cs
-CrosshairController.cs
-```
-
-边界：
-
-- 不判断分类正误。
-- 不记录正确率。
-- 不控制结算页。
-
-### 5.4 Core
-
-路径：
-
-```text
-Assets/Scripts/Core/
-```
-
-负责人：开发 C。
-
-职责：
-
-- 游戏状态。
-- 任务开始和结束。
-- 倒计时。
-- 成功/失败判断。
-- 重开流程。
-
-建议文件：
-
-```text
-GameManager.cs
-TaskController.cs
-```
-
-### 5.5 UI
-
-路径：
-
-```text
-Assets/Scripts/UI/
-```
-
-负责人：开发 C。
-
-职责：
-
-- HUD。
-- 正确/错误提示。
-- 结算面板。
-- 物品名提示。
-
-建议文件：
-
-```text
-HUDController.cs
-FeedbackPanel.cs
-ResultPanel.cs
-```
-
-### 5.6 Analytics
-
-路径：
-
-```text
-Assets/Scripts/Analytics/
-```
-
-负责人：开发 C。
-
-职责：
-
-- 当轮统计。
-- 错误记录。
-- 正确率计算。
-
-建议文件：
-
-```text
-SessionStats.cs
-WrongAttemptRecord.cs
-```
-
-V0.3 不做服务器上传和长期存储。
-
-## 6. 旧脚本处理
-
-当前旧脚本：
-
-```text
-Assets/Scripts/Player.cs
-Assets/Scripts/Garbage.cs
-Assets/Scripts/SceneController.cs
-```
-
-处理建议：
-
-| 旧脚本 | 当前问题 | V0.3 处理方式 |
-| --- | --- | --- |
-| `Player.cs` | 同时负责移动、视角、跳跃、倒计时、计数、胜负面板 | 不继续追加新逻辑，拆分到 `Player/` 和 `Core/` |
-| `Garbage.cs` | 点击即计数并销毁，不能表达分类 | 不继续使用为核心逻辑，替换为 `GarbageItem.cs` |
-| `SceneController.cs` | 场景切换和退出 | 可保留，后续归入 Core 或 UI 按钮流程 |
-
-原则：
-
-- 不要直接删除旧脚本，避免场景引用丢失。
-- 新功能先写新脚本。
-- 联调稳定后再逐步清理旧引用。
-
-## 7. Prefab 结构
-
-### 7.1 GarbageItem Prefab
-
-目录：
-
-```text
-Assets/Prefabs/GarbageItems/
-```
-
-命名：
-
-```text
-PF_Garbage_PlasticBottle
-PF_Garbage_CardboardBox
-PF_Garbage_MilkTeaCup
-```
-
-推荐组件：
-
-```text
-Model
-Collider
-Rigidbody
-GarbageItem
-SelectableHighlighter
-```
-
-配置字段：
-
-- `itemId`
-- `itemName`
-- `category`
-- `wrongReason`
-
-### 7.2 TrashBin Prefab
-
-目录：
-
-```text
-Assets/Prefabs/TrashBins/
-```
-
-命名：
-
-```text
-PF_Bin_RecyclableBlue
-PF_Bin_HazardousRed
-PF_Bin_KitchenGreen
-PF_Bin_OtherGray
-```
-
-推荐结构：
-
-```text
-PF_Bin_RecyclableBlue
-├── Model
-└── DropZone
-```
-
-推荐组件：
-
-```text
-TrashBin
-DropZone
-Trigger Collider
-```
-
-`DropZone` 应作为垃圾桶子物体，放在桶口或桶前方，判定范围可适当放大。
-
-## 8. 场景结构
-
-V0.3 场景建议使用：
-
-```text
-Assets/Scenes/MVP.unity
-```
-
-或沿用现有场景，但内部结构建议整理为：
-
-```text
-SceneRoot
-├── Managers
-│   ├── GameManager
-│   └── TaskController
-├── Player
-│   ├── PlayerController
-│   └── Camera
-├── Environment
-├── Gameplay
-│   ├── GarbageItems
-│   └── TrashBins
-├── UI
-│   ├── HUD
-│   ├── FeedbackPanel
-│   └── ResultPanel
-└── Audio
-```
-
-V0.3 不需要 XR Rig。后续 VR 适配时再新增 `XR/` 或 `XROrigin`。
-
-## 9. 数据流
-
-```mermaid
-flowchart LR
-    A[鼠标键盘输入] --> B[DesktopGarbageInteractor]
-    B --> C[GarbageItem]
-    C --> D[DropZone]
-    D --> E[TrashBin]
-    E --> F[ClassificationEvents]
-    F --> G[TaskController]
-    G --> H[HUD / FeedbackPanel / ResultPanel]
-    G --> I[SessionStats]
-```
-
-说明：
-
-- 开发 B 负责把垃圾送入 `DropZone`。
-- 开发 A 负责生成分类结果。
-- 开发 C 负责消费分类结果并更新 UI。
-
-## 10. 公共接口约定
-
-### 10.1 分类枚举
+推荐枚举：
 
 ```csharp
 public enum WasteCategory
@@ -450,101 +115,265 @@ public enum WasteCategory
 }
 ```
 
-### 10.2 垃圾状态
+### 4.3 Gameplay
 
-V0.3 至少需要：
+职责：承载垃圾分类的核心规则和任务目标。
 
-```text
-Idle
-Held
-Completed
+建议脚本：
+
+| 脚本 | 职责 |
+| --- | --- |
+| `GarbageItem.cs` | 挂在垃圾物体上，记录当前垃圾数据和状态 |
+| `TrashBin.cs` | 挂在垃圾桶上，记录桶类型和触发区 |
+| `ClassificationSystem.cs` | 比对垃圾类别和垃圾桶类别，返回判定结果 |
+| `TaskController.cs` | 管理倒计时、完成数量、胜负条件 |
+| `ScoreController.cs` | 管理得分、正确数、错误数、连击等 |
+
+### 4.4 Interaction
+
+职责：处理桌面调试、VR 射线、抓取、释放和投放输入。
+
+建议脚本：
+
+| 脚本 | 职责 |
+| --- | --- |
+| `GarbageSelectable.cs` | 处理选中、高亮 |
+| `GarbageGrabber.cs` | 处理抓取、跟随、释放 |
+| `DesktopInteractionAdapter.cs` | 桌面鼠标调试输入 |
+| `XRInteractionAdapter.cs` | VR 手柄或射线输入适配 |
+| `DropZone.cs` | 桶口投放区域触发 |
+
+设计原则：
+
+- 分类规则不直接写在交互脚本中。
+- 桌面输入和 XR 输入只负责“用户做了什么”。
+- 分类系统负责“这个行为结果是否正确”。
+
+### 4.5 Feedback
+
+职责：统一处理视觉、声音、震动和动画反馈。
+
+建议脚本：
+
+| 脚本 | 职责 |
+| --- | --- |
+| `FeedbackController.cs` | 对外提供正确、错误、完成等反馈入口 |
+| `TrashBinFeedback.cs` | 垃圾桶高亮、桶盖动画、入桶反馈 |
+| `GarbageFeedback.cs` | 垃圾高亮、复位、消失或落入桶内 |
+| `HapticFeedback.cs` | 手柄震动 |
+| `AudioFeedback.cs` | 正确、错误、抓取、完成音效 |
+
+### 4.6 UI
+
+职责：展示任务信息、倒计时、进度、提示和结算。
+
+建议脚本：
+
+| 脚本 | 职责 |
+| --- | --- |
+| `HUDController.cs` | 倒计时、进度、当前提示 |
+| `PromptPanel.cs` | 正确/错误原因提示 |
+| `ResultPanel.cs` | 结算页 |
+| `TutorialPanel.cs` | 新手引导 |
+
+UI 要求：
+
+- 字号足够大，适合 VR 阅读。
+- 提示短句优先，不堆长段文字。
+- UI 固定在舒适视野范围内。
+
+### 4.7 Analytics
+
+职责：记录行为数据，支持数据分析员和影响分析员后续评估。
+
+建议脚本：
+
+| 脚本 | 职责 |
+| --- | --- |
+| `AnalyticsManager.cs` | 统一记录用户操作事件 |
+| `SessionRecord.cs` | 保存单轮体验统计 |
+| `ClassificationAttemptRecord.cs` | 保存单次投放尝试 |
+| `LocalCsvExporter.cs` | 可选，将日志导出为 CSV |
+
+推荐事件：
+
+- `SessionStarted`
+- `ItemGrabbed`
+- `ItemDropped`
+- `ClassificationCorrect`
+- `ClassificationWrong`
+- `ItemRetried`
+- `SessionCompleted`
+
+## 5. 数据流设计
+
+```mermaid
+flowchart LR
+    A[用户输入] --> B[Interaction]
+    B --> C[GarbageItem + TrashBin]
+    C --> D[ClassificationSystem]
+    D --> E[TaskController]
+    D --> F[FeedbackController]
+    D --> G[AnalyticsManager]
+    E --> H[HUD / ResultPanel]
+    F --> I[动画 / 音效 / 震动]
+    G --> J[本地日志 / 后续分析]
 ```
 
-### 10.3 分类结果
+关键原则：
 
-`ClassificationResult` 至少包含：
+- 输入层只描述动作。
+- 规则层只负责判断。
+- 反馈层只负责表现。
+- 数据层只负责记录。
+- UI 层只负责展示。
 
-```text
-GarbageItem item
-TrashBin bin
-bool isCorrect
-WasteCategory correctCategory
-WasteCategory selectedCategory
-string reason
-```
+## 6. 场景结构建议
 
-### 10.4 分类事件
-
-建议：
+MVP 场景 `Canteen_MVP.unity` 或 `Community_MVP.unity` 建议包含：
 
 ```text
-ClassificationEvents.OnClassified(ClassificationResult result)
+SceneRoot
+├── Managers
+│   ├── GameManager
+│   ├── LevelManager
+│   ├── TaskController
+│   ├── FeedbackController
+│   └── AnalyticsManager
+├── XR
+│   ├── XROrigin
+│   └── InteractionRay
+├── Environment
+│   ├── Floor
+│   ├── Tables
+│   ├── Buildings
+│   └── Props
+├── Gameplay
+│   ├── GarbageSpawnPoints
+│   ├── GarbageItems
+│   └── TrashBins
+├── UI
+│   ├── WorldSpaceHUD
+│   ├── PromptPanel
+│   └── ResultPanel
+└── Audio
+    ├── BGM
+    └── SFX
 ```
 
-开发 C 订阅该事件，开发 B 不直接参与统计。
+## 7. Prefab 设计
 
-## 11. 资源命名规范
+### 7.1 GarbageItem Prefab
 
-### 11.1 模型文件
+组成建议：
 
-使用小写英文和下划线：
+- 模型 Mesh。
+- Collider。
+- Rigidbody。
+- `GarbageItem`。
+- `GarbageSelectable`。
+- 高亮组件或描边材质。
 
-```text
-garbage_plastic_bottle.glb
-bin_recyclable_blue.glb
-```
+关键配置：
 
-### 11.2 Prefab
+- `itemData`：垃圾数据引用。
+- `resetPosition`：错误复位点。
+- `isClassified`：是否已正确分类。
 
-使用 `PF_` 前缀和 PascalCase：
+### 7.2 TrashBin Prefab
 
-```text
-PF_Garbage_PlasticBottle
-PF_Bin_RecyclableBlue
-```
+组成建议：
 
-### 11.3 数据 ID
+- 桶身模型。
+- 桶口 Trigger Collider。
+- 颜色、文字、图标标识。
+- `TrashBin`。
+- `TrashBinFeedback`。
 
-使用和模型文件一致的无扩展名形式：
+关键配置：
 
-```text
-garbage_plastic_bottle
-bin_recyclable_blue
-```
+- `category`：垃圾桶类别。
+- `dropZone`：投放触发区域。
+- `correctEffect`、`wrongEffect`：反馈表现。
 
-## 12. 开发协作结构
+## 8. 重构步骤建议
 
-开发规范见：
+### 第一阶段：保留可运行 Demo，拆出分类概念
 
-```text
-docs/plan/V0.3-开发协作规范.md
-```
+目标：
 
-关键规则：
+- 增加 `WasteCategory`。
+- 将 `Garbage.cs` 改为记录垃圾类别。
+- 增加 `TrashBin.cs` 和桶口触发判断。
+- 暂时保留现有倒计时和胜负 UI。
 
-- 每人 checkout 自己分支。
-- 开发完成提交 PR。
-- 不直接合入主分支。
-- 由统筹负责人审核后合入。
-- 公共接口改动必须先沟通。
+### 第二阶段：替换清扫计数为分类任务
 
-## 13. 后续扩展结构
+目标：
 
-V0.4 或之后可新增：
+- 正确投放才增加完成数。
+- 错误投放不销毁垃圾，显示原因并允许重试。
+- 结算页显示正确率和错误次数。
 
-```text
-Assets/Scripts/XR/
-Assets/Scripts/Feedback/
-Assets/Data/GarbageItems/
-Assets/Data/Levels/
-Assets/Prefabs/XR/
-```
+### 第三阶段：整理数据与反馈
 
-扩展方向：
+目标：
 
-- VR 输入适配。
-- ScriptableObject 数据配置。
-- 音效、震动、动画反馈。
-- 多场景和多难度。
-- 数据导出和分析。
+- 引入 `GarbageItemData`。
+- 将错误解释从代码移动到数据配置。
+- 增加 `FeedbackController`。
+- 增加本地行为日志。
 
+### 第四阶段：接入 VR 交互
+
+目标：
+
+- 桌面点击调试和 XR 射线抓取并存。
+- 优化桶口判定范围。
+- 加入手柄震动、空间 UI 和低眩晕体验设置。
+
+### 第五阶段：资源和性能整理
+
+目标：
+
+- 整理垃圾、垃圾桶和场景资源目录。
+- 降低模型复杂度。
+- 优化材质和光照。
+- 检查 VR 帧率和输入延迟。
+
+## 9. 命名规范建议
+
+### 9.1 文件命名
+
+- C# 脚本：`PascalCase.cs`，例如 `GarbageItem.cs`。
+- Prefab：`PF_类型_名称`，例如 `PF_Garbage_PlasticBottle`。
+- 材质：`MAT_名称`。
+- 音效：`SFX_动作_结果`，例如 `SFX_Drop_Correct`。
+- 场景：`场景名_版本`，例如 `Canteen_MVP`。
+
+### 9.2 分类命名
+
+| 中文 | 英文建议 |
+| --- | --- |
+| 可回收物 | `Recyclable` |
+| 有害垃圾 | `Hazardous` |
+| 厨余垃圾 | `Kitchen` |
+| 其他垃圾 | `Other` |
+
+## 10. 团队协作边界
+
+| 角色 | 主要交付 |
+| --- | --- |
+| 设计师 | 体验流程、场景布局、UI 信息、错误反馈文案 |
+| 开发工程师 | 交互系统、分类规则、任务流程、数据记录 |
+| 动画师 | 抓取、投放、桶盖、反馈 UI 和低眩晕动画 |
+| 数据分析员 | 指标体系、日志字段、正确率和留存分析 |
+| 影响分析员 | 环保影响解释、社会价值、风险与可持续性评估 |
+
+## 11. 与现有文档关系
+
+- `docs/PRD.md`：定义产品目标、功能范围和验收标准。
+- `docs/PROJECT_STRUCTURE.md`：定义工程结构和重构方向。
+- `docs/design/VR垃圾分类小游戏总体设计文档.md`：提供完整体验设计背景。
+- `docs/design/MVP设计方案.md`：提供首个版本的具体玩法取舍。
+- `docs/design/modules/`：按模块拆分细节，可作为实现任务来源。
