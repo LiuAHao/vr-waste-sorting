@@ -148,7 +148,7 @@ ClassificationEvents.OnClassified
 ```text
 收到 result
 -> 如果当前不是 Playing，忽略
--> 如果 result.isCorrect，增加进度和分数
+-> 如果 result.IsCorrect，增加进度和分数
 -> 如果错误，记录错误物品和原因
 -> 更新 HUD
 -> 显示正确或错误反馈
@@ -159,7 +159,7 @@ ClassificationEvents.OnClassified
 
 - 不要在 UI 脚本中重新判断分类。
 - 不要因为错误投放结束游戏。
-- 不要让同一个已完成垃圾重复增加进度，这一点也需要和开发 A 的 `isCompleted` 配合。
+- 不要让同一个已完成垃圾重复增加进度，这一点也需要和开发 A 的 `IsCompleted` 配合。
 
 ### 第 4 步：实现游戏中 HUD
 
@@ -249,9 +249,11 @@ string reason
 
 正确率计算建议：
 
-```text
-correctRate = correctCount / max(1, correctCount + wrongCount)
+```csharp
+float correctRate = correctCount / Mathf.Max(1f, correctCount + wrongCount);
 ```
+
+注意这里要使用浮点计算，避免 C# 整数除法导致正确率变成 0。
 
 注意：
 
@@ -323,17 +325,17 @@ ClassificationEvents.OnClassified(ClassificationResult result)
 需要读取：
 
 ```text
-result.item.itemId
-result.item.itemName
-result.isCorrect
-result.correctCategory
-result.selectedCategory
-result.reason
+result.Item.ItemId
+result.Item.ItemName
+result.IsCorrect
+result.CorrectCategory
+result.SelectedCategory
+result.Reason
 ```
 
 不应该做：
 
-- 不重新比较 `item.category == bin.category`。
+- 不重新比较 `item.Category == bin.Category`。
 - 不直接修改垃圾分类。
 - 不直接控制 DropZone。
 
@@ -409,10 +411,9 @@ void RestartTask()
 
 | 风险 | 处理方式 |
 | --- | --- |
-| 正确投放后进度加两次 | 和开发 A 确认 `isCompleted`，同时检查事件是否重复订阅 |
+| 正确投放后进度加两次 | 和开发 A 确认 `IsCompleted`，同时检查事件是否重复订阅 |
 | 错误投放也结束任务 | 错误只记录和提示，不增加完成数 |
 | 结算页正确率不合理 | 使用 `correctCount / (correctCount + wrongCount)`，注意除零 |
 | 重开后数据残留 | 统一通过 `StartTask()` 初始化所有统计字段 |
 | UI 收不到分类结果 | 检查事件订阅、对象激活状态、脚本执行顺序 |
 | UI 文字太多看不清 | 游戏中只显示短提示，详细错误放结算页 |
-

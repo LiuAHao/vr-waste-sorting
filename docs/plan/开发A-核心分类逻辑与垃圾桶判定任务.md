@@ -91,14 +91,15 @@ public enum WasteCategory
 
 创建 `GarbageItem.cs`，挂在每个垃圾物体上。
 
-建议字段：
+建议内部字段与公开属性：
 
 ```text
-string itemId
-string itemName
-WasteCategory category
-string wrongReason
-bool isCompleted
+string itemId -> public string ItemId { get; }
+string itemName -> public string ItemName { get; }
+WasteCategory category -> public WasteCategory Category { get; }
+string wrongReason -> public string WrongReason { get; }
+bool isCompleted -> public bool IsCompleted { get; }
+bool isHeld -> public bool IsHeld { get; }
 Vector3 startPosition
 Quaternion startRotation
 Rigidbody rb
@@ -117,7 +118,7 @@ SetHeld(bool held)
 实现要点：
 
 - `Start()` 或 `Awake()` 记录初始位置和旋转。
-- `MarkCompleted()` 后设置 `isCompleted = true`，并可禁用 Collider 或隐藏物体。
+- `MarkCompleted()` 后设置内部完成状态，并让 `IsCompleted` 返回 true，可禁用 Collider 或隐藏物体。
 - `ResetToStartPosition()` 用于错误重试，恢复位置、旋转和速度。
 - 不要在 `GarbageItem` 中直接加分或打开 UI。
 
@@ -125,11 +126,11 @@ SetHeld(bool held)
 
 创建 `TrashBin.cs`，挂在垃圾桶主体上。
 
-建议字段：
+建议内部字段与公开属性：
 
 ```text
-WasteCategory category
-string displayName
+WasteCategory category -> public WasteCategory Category { get; }
+string displayName -> public string DisplayName { get; }
 Renderer highlightRenderer
 Color normalColor
 Color correctColor
@@ -148,7 +149,7 @@ void ClearFeedback()
 
 实现要点：
 
-- `Accepts()` 只比较 `item.category == category`。
+- `Accepts()` 只通过公开属性比较 `item.Category == Category`。
 - 如果暂时不做高亮，反馈方法可以先空实现，但保留接口。
 - 不要在 `TrashBin` 里查找 UI 或 GameManager。
 
@@ -175,21 +176,21 @@ bool classifyOnTriggerEnter
 
 - Trigger Collider 要勾选 `Is Trigger`。
 - 垃圾物体需要 Collider，通常还需要 Rigidbody 才能稳定触发 Unity 物理事件。
-- 为了避免重复触发，可在 `GarbageItem` 中记录 `isCompleted`，正确后立即标记。
+- 为了避免重复触发，可在 `GarbageItem` 中记录完成状态，正确后立即标记，让 `IsCompleted` 返回 true。
 
 ### 第 5 步：定义分类结果数据
 
 创建 `ClassificationResult.cs`。
 
-建议字段：
+建议公开属性：
 
 ```text
-GarbageItem item
-TrashBin bin
-bool isCorrect
-WasteCategory correctCategory
-WasteCategory selectedCategory
-string reason
+GarbageItem Item
+TrashBin Bin
+bool IsCorrect
+WasteCategory CorrectCategory
+WasteCategory SelectedCategory
+string Reason
 ```
 
 用途：
@@ -225,9 +226,9 @@ public static event Action<ClassificationResult> OnClassified;
 
 开发 B 不应直接修改：
 
-- `category`
-- `wrongReason`
-- `isCompleted`，除非通过公开方法。
+- `Category`
+- `WrongReason`
+- `IsCompleted`，除非通过公开方法。
 
 ### 提供给开发 C
 
@@ -239,12 +240,12 @@ ClassificationEvents.OnClassified(ClassificationResult result)
 
 开发 C 依赖的数据：
 
-- `result.item.itemName`
-- `result.item.itemId`
-- `result.isCorrect`
-- `result.correctCategory`
-- `result.selectedCategory`
-- `result.reason`
+- `result.Item.ItemName`
+- `result.Item.ItemId`
+- `result.IsCorrect`
+- `result.CorrectCategory`
+- `result.SelectedCategory`
+- `result.Reason`
 
 开发 C 不应自己重新判断分类正误。
 
@@ -281,8 +282,8 @@ ClassificationEvents.OnClassified(ClassificationResult result)
 - [ ] 至少 8 个垃圾物体能在 Inspector 中配置名称、分类、解释。
 - [ ] 四个垃圾桶能在 Inspector 中配置类别。
 - [ ] 每个垃圾桶的 DropZone 能触发分类判断。
-- [ ] 正确投放触发 `isCorrect = true`。
-- [ ] 错误投放触发 `isCorrect = false`，并返回原因。
+- [ ] 正确投放触发 `ClassificationResult.IsCorrect = true`。
+- [ ] 错误投放触发 `ClassificationResult.IsCorrect = false`，并返回原因。
 - [ ] 正确投放后同一垃圾不会重复触发计分。
 - [ ] 错误投放后同一垃圾仍可再次尝试。
 - [ ] 分类结果事件能被开发 C 订阅。
@@ -297,4 +298,3 @@ ClassificationEvents.OnClassified(ClassificationResult result)
 | 投错后垃圾卡在桶里反复触发 | 错误后调用复位，或给 DropZone 加短暂冷却 |
 | UI 收不到结果 | 检查事件订阅时机，使用 `OnEnable`/`OnDisable` |
 | 开发 B 无法抓取 | 确认 `CanInteract()` 没有误判，Collider 没被提前禁用 |
-

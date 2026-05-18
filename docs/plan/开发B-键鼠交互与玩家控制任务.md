@@ -213,16 +213,18 @@ Transform holdPoint
 GarbageItem.CanInteract()
 GarbageItem.SetHeld(bool held)
 GarbageItem.ResetToStartPosition()
-GarbageItem.isCompleted
+GarbageItem.IsCompleted
 ```
 
 不应修改：
 
 ```text
-GarbageItem.category
-GarbageItem.wrongReason
-TrashBin.category
+GarbageItem.Category
+GarbageItem.WrongReason
+TrashBin.Category
 ```
+
+这些值应通过开发 A 提供的公开属性读取，不要直接改内部字段。
 
 ### 依赖开发 C
 
@@ -291,4 +293,3 @@ HUDController.ClearHoverItemName()
 | 垃圾释放后乱飞 | 释放时清空速度或减小 Rigidbody 速度 |
 | 拿着垃圾经过桶就误判 | DropZone 忽略 Held 状态，要求释放后判定 |
 | 垃圾卡进场景 | 加复位键或让开发 A 的错误复位处理异常位置 |
-
