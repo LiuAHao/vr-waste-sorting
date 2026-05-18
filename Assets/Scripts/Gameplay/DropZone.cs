@@ -12,12 +12,7 @@ public class DropZone : MonoBehaviour
             return;
         }
 
-        GarbageItem item = other.GetComponent<GarbageItem>();
-        if (item == null)
-        {
-            item = other.GetComponentInParent<GarbageItem>();
-        }
-
+        GarbageItem item = ResolveGarbageItem(other);
         if (item == null || item.IsCompleted || item.IsHeld)
         {
             return;
@@ -40,5 +35,31 @@ public class DropZone : MonoBehaviour
         }
 
         ClassificationEvents.RaiseClassified(result);
+    }
+
+    private static GarbageItem ResolveGarbageItem(Collider other)
+    {
+        GarbageItem item = other.GetComponent<GarbageItem>();
+        if (item != null)
+        {
+            return item;
+        }
+
+        if (other.attachedRigidbody != null)
+        {
+            item = other.attachedRigidbody.GetComponent<GarbageItem>();
+            if (item != null)
+            {
+                return item;
+            }
+        }
+
+        item = other.GetComponentInParent<GarbageItem>();
+        if (item != null)
+        {
+            return item;
+        }
+
+        return other.GetComponentInChildren<GarbageItem>();
     }
 }
