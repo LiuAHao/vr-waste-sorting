@@ -3,6 +3,7 @@
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
+[Aa]rtifacts/
 [Ll]ogs/
 [Uu]ser[Ss]ettings/
 [Mm]emoryCaptures/
@@ -15,6 +16,8 @@
 
 # Visual Studio / Rider
 .vs/
+.vscode/
+.vsconfig
 .idea/
 .gradle/
 ExportedObj/
@@ -33,12 +36,15 @@ ExportedObj/
 *.mdb
 *.opendb
 *.VC.db
+sysinfo.txt
 
 # Unity generated files
 *.apk
 *.aab
 *.unitypackage
 *.app
+*.exe
+*.ipa
 
 # OS files
 .DS_Store

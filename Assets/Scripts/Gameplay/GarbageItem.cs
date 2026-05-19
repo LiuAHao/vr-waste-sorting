@@ -7,6 +7,7 @@ public class GarbageItem : MonoBehaviour
     [SerializeField] private WasteCategory category;
     [SerializeField] private string wrongReason;
 
+    private Rigidbody _rigidbody;
     private Vector3 _startPosition;
     private Quaternion _startRotation;
     private bool _isCompleted;
@@ -21,6 +22,7 @@ public class GarbageItem : MonoBehaviour
 
     private void Awake()
     {
+        _rigidbody = GetComponent<Rigidbody>();
         _startPosition = transform.position;
         _startRotation = transform.rotation;
     }
@@ -44,6 +46,18 @@ public class GarbageItem : MonoBehaviour
     public void ResetToStartPosition()
     {
         _isHeld = false;
+
+        if (_rigidbody != null)
+        {
+            _rigidbody.velocity = Vector3.zero;
+            _rigidbody.angularVelocity = Vector3.zero;
+        }
+
         transform.SetPositionAndRotation(_startPosition, _startRotation);
+
+        if (_rigidbody != null)
+        {
+            _rigidbody.Sleep();
+        }
     }
 }
