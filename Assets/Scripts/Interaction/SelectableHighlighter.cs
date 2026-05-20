@@ -5,19 +5,37 @@ namespace ParkClean.Interaction
     public class SelectableHighlighter : MonoBehaviour
     {
         [SerializeField] private Color highlightColor = Color.yellow;
-        private Color originalColor;
-        private MeshRenderer meshRenderer;
 
-        void Start()
+        private MeshRenderer _meshRenderer;
+        private Color _originalColor;
+        private bool _initialized;
+
+        private void Awake()
         {
-            meshRenderer = GetComponentInChildren<MeshRenderer>();
-            if (meshRenderer != null) originalColor = meshRenderer.material.color;
+            _meshRenderer = GetComponentInChildren<MeshRenderer>();
+            if (_meshRenderer != null)
+            {
+                _originalColor = _meshRenderer.material.color;
+                _initialized = true;
+            }
         }
 
         public void SetHighlight(bool status)
         {
-            if (meshRenderer == null) return;
-            meshRenderer.material.color = status ? highlightColor : originalColor;
+            if (!_initialized || _meshRenderer == null)
+            {
+                return;
+            }
+
+            _meshRenderer.material.color = status ? highlightColor : _originalColor;
+        }
+
+        private void OnDisable()
+        {
+            if (_initialized && _meshRenderer != null)
+            {
+                _meshRenderer.material.color = _originalColor;
+            }
         }
     }
 }

@@ -4,22 +4,43 @@ namespace ParkClean.Interaction
 {
     public class DesktopGarbageInteractor : MonoBehaviour
     {
-        [Header("核心配置")]
         [SerializeField] private Camera playerCamera;
+        [SerializeField] private Player player;
         [SerializeField] private float interactDistance = 4f;
-        [SerializeField] private LayerMask interactMask;
+        [SerializeField] private LayerMask interactMask = Physics.DefaultRaycastLayers;
         [SerializeField] private Transform holdPoint;
-
-        [Header("视觉射线")]
+        [SerializeField] private float followSpeed = 15f;
         [SerializeField] private LineRenderer rayLine;
 
-        private Garbage currentHover; // 已改为 Garbage
-        private GameObject heldItem;
-        private Rigidbody heldRb;
+        private GarbageItem _currentHover;
+        private SelectableHighlighter _currentHighlighter;
+        private GarbageItem _heldItem;
+        private Rigidbody _heldRigidbody;
 
-        void Start()
+        public void Configure(Camera cameraRef, Player playerRef, Transform holdPointRef, LineRenderer lineRendererRef)
         {
-            if (playerCamera == null) playerCamera = Camera.main;
+            playerCamera = cameraRef;
+            player = playerRef;
+            holdPoint = holdPointRef;
+            rayLine = lineRendererRef;
+        }
+
+        private void Awake()
+        {
+            if (playerCamera == null)
+            {
+                playerCamera = GetComponent<Camera>();
+            }
+
+            if (playerCamera == null)
+            {
+                playerCamera = Camera.main;
+            }
+
+            if (player == null)
+            {
+                player = FindObjectOfType<Player>();
+            }
 
             if (rayLine != null)
             {
@@ -30,85 +51,201 @@ namespace ParkClean.Interaction
             }
         }
 
-        void Update()
+        private void Update()
         {
-            DrawVisualRay();
-
-            if (heldItem == null)
+            if (!CanProcessInteraction())
             {
-                HandleSelection();
-                if (Input.GetMouseButtonDown(0)) TryGrab();
+                if (_heldItem != null)
+                {
+                    Release();
+                }
+
+                ClearHover();
+                UpdateVisualRay(false);
+                return;
+            }
+
+            UpdateVisualRay(true);
+
+            if (_heldItem == null)
+            {
+                UpdateSelection();
+                if (Input.GetMouseButtonDown(0))
+                {
+                    TryGrab();
+                }
             }
             else
             {
-                HandleHolding();
-                if (Input.GetMouseButtonUp(0)) Release();
+                UpdateHeldItem();
+                if (Input.GetMouseButtonUp(0))
+                {
+                    Release();
+                }
             }
         }
 
-        void DrawVisualRay()
+        private bool CanProcessInteraction()
         {
-            if (rayLine == null || playerCamera == null) return;
+            return playerCamera != null
+                && holdPoint != null
+                && player != null
+                && player.InputEnabled;
+        }
 
-            // 修正：将 Z 轴深度从 0.4f 增加到 0.8f，防止被相机裁剪
-            Vector3 startPos = playerCamera.ViewportToWorldPoint(new Vector3(0.85f, 0.15f, 0.8f));
-            Vector3 endPos = playerCamera.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, interactDistance));
+        private void UpdateVisualRay(bool active)
+        {
+            if (rayLine == null || playerCamera == null)
+            {
+                return;
+            }
 
+            rayLine.enabled = active;
+            if (!active)
+            {
+                return;
+            }
+
+            Vector3 startPos = playerCamera.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 0.8f));
+            Vector3 endPos = startPos + playerCamera.transform.forward * interactDistance;
             rayLine.SetPosition(0, startPos);
             rayLine.SetPosition(1, endPos);
         }
 
-        void HandleSelection()
+        private void UpdateSelection()
         {
-            Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+            GarbageItem nextHover = null;
+            Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             if (Physics.Raycast(ray, out RaycastHit hit, interactDistance, interactMask))
             {
-                // 已改为获取 Garbage 组件
-                Garbage item = hit.collider.GetComponent<Garbage>();
-
-                // 注意：请确保你的 Garbage 脚本里有 CanInteract() 函数
+                GarbageItem item = ResolveGarbageItem(hit.collider);
                 if (item != null && item.CanInteract())
                 {
-                    if (currentHover != item)
-                    {
-                        if (currentHover != null) currentHover.GetComponent<SelectableHighlighter>()?.SetHighlight(false);
-                        currentHover = item;
-                        currentHover.GetComponent<SelectableHighlighter>()?.SetHighlight(true);
-                    }
-                    return;
+                    nextHover = item;
                 }
             }
-            if (currentHover != null)
+
+            if (_currentHover == nextHover)
             {
-                currentHover.GetComponent<SelectableHighlighter>()?.SetHighlight(false);
-                currentHover = null;
+                return;
             }
+
+            ClearHover();
+            if (nextHover == null)
+            {
+                return;
+            }
+
+            _currentHover = nextHover;
+            _currentHighlighter = nextHover.GetComponent<SelectableHighlighter>();
+            if (_currentHighlighter == null)
+            {
+                _currentHighlighter = nextHover.gameObject.AddComponent<SelectableHighlighter>();
+            }
+
+            _currentHighlighter.SetHighlight(true);
         }
 
-        void TryGrab()
+        private void TryGrab()
         {
-            if (currentHover == null) return;
-            heldItem = currentHover.gameObject;
-            heldRb = heldItem.GetComponent<Rigidbody>();
-            if (heldRb != null) { heldRb.isKinematic = true; heldRb.useGravity = false; }
+            if (_currentHover == null || holdPoint == null)
+            {
+                return;
+            }
 
-            // 注意：请确保你的 Garbage 脚本里有 SetHeld() 函数
-            currentHover.SetHeld(true);
+            _heldItem = _currentHover;
+            _heldRigidbody = _heldItem.GetComponent<Rigidbody>();
+            if (_heldRigidbody != null)
+            {
+                _heldRigidbody.velocity = Vector3.zero;
+                _heldRigidbody.angularVelocity = Vector3.zero;
+                _heldRigidbody.isKinematic = true;
+                _heldRigidbody.useGravity = false;
+            }
+
+            _heldItem.SetHeld(true);
+            if (_currentHighlighter != null)
+            {
+                _currentHighlighter.SetHighlight(false);
+            }
+
+            _currentHover = null;
+            _currentHighlighter = null;
         }
 
-        void HandleHolding()
+        private void UpdateHeldItem()
         {
-            heldItem.transform.position = Vector3.Lerp(heldItem.transform.position, holdPoint.position, Time.deltaTime * 15f);
+            if (_heldItem == null || holdPoint == null)
+            {
+                return;
+            }
+
+            _heldItem.transform.position = Vector3.Lerp(
+                _heldItem.transform.position,
+                holdPoint.position,
+                Time.deltaTime * followSpeed);
         }
 
-        void Release()
+        private void Release()
         {
-            if (heldRb != null) { heldRb.isKinematic = false; heldRb.useGravity = true; }
+            if (_heldItem == null)
+            {
+                return;
+            }
 
-            // 已改为获取 Garbage 组件
-            heldItem.GetComponent<Garbage>()?.SetHeld(false);
-            heldItem = null;
-            heldRb = null;
+            _heldItem.SetHeld(false);
+            if (_heldRigidbody != null)
+            {
+                _heldRigidbody.isKinematic = false;
+                _heldRigidbody.useGravity = true;
+                _heldRigidbody.velocity = Vector3.zero;
+                _heldRigidbody.angularVelocity = Vector3.zero;
+            }
+
+            _heldItem = null;
+            _heldRigidbody = null;
+        }
+
+        private void ClearHover()
+        {
+            if (_currentHighlighter != null)
+            {
+                _currentHighlighter.SetHighlight(false);
+            }
+
+            _currentHover = null;
+            _currentHighlighter = null;
+        }
+
+        private static GarbageItem ResolveGarbageItem(Collider other)
+        {
+            if (other == null)
+            {
+                return null;
+            }
+
+            GarbageItem item = other.GetComponent<GarbageItem>();
+            if (item != null)
+            {
+                return item;
+            }
+
+            if (other.attachedRigidbody != null)
+            {
+                item = other.attachedRigidbody.GetComponent<GarbageItem>();
+                if (item != null)
+                {
+                    return item;
+                }
+            }
+
+            item = other.GetComponentInParent<GarbageItem>();
+            if (item != null)
+            {
+                return item;
+            }
+
+            return other.GetComponentInChildren<GarbageItem>();
         }
     }
 }
