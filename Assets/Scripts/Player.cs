@@ -11,6 +11,8 @@ public class Player : MonoBehaviour
     private float _verticalRotation;
     private bool _inputEnabled = true;
 
+    public bool InputEnabled => _inputEnabled;
+
     private void Awake()
     {
         _rigidbody = GetComponent<Rigidbody>();
@@ -38,7 +40,7 @@ public class Player : MonoBehaviour
 
         float mouseY = Input.GetAxis("Mouse Y");
         _verticalRotation -= mouseY * 2f;
-        _verticalRotation = Mathf.Clamp(_verticalRotation, -30f, 30f);
+        _verticalRotation = Mathf.Clamp(_verticalRotation, -45f, 45f);
 
         Camera mainCamera = Camera.main;
         if (mainCamera != null)
