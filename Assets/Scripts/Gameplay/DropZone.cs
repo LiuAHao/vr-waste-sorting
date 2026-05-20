@@ -4,24 +4,32 @@ public class DropZone : MonoBehaviour
 {
     [SerializeField] private TrashBin targetBin;
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (targetBin == null)
-        {
-            Debug.LogWarning("DropZone: targetBin is not assigned.", this);
-            return;
-        }
+    private Collider _triggerCollider;
 
-        GarbageItem item = ResolveGarbageItem(other);
-        if (item == null || item.IsCompleted || item.IsHeld)
+    private void Awake()
+    {
+        _triggerCollider = GetComponent<Collider>();
+    }
+
+    public bool CanAccept(GarbageItem item)
+    {
+        return item != null
+            && !item.IsCompleted
+            && targetBin != null
+            && IsOverlapping(item);
+    }
+
+    public ClassificationResult Classify(GarbageItem item)
+    {
+        if (!CanAccept(item))
         {
-            return;
+            return null;
         }
 
         bool isCorrect = targetBin.Accepts(item);
         string reason = isCorrect ? string.Empty : item.WrongReason;
 
-        var result = new ClassificationResult(
+        ClassificationResult result = new ClassificationResult(
             item,
             targetBin,
             isCorrect,
@@ -35,31 +43,68 @@ public class DropZone : MonoBehaviour
         }
 
         ClassificationEvents.RaiseClassified(result);
+        return result;
     }
 
-    private static GarbageItem ResolveGarbageItem(Collider other)
+    public static ClassificationResult TryClassifyReleasedItem(GarbageItem item)
     {
-        GarbageItem item = other.GetComponent<GarbageItem>();
-        if (item != null)
+        if (item == null || item.IsCompleted)
         {
-            return item;
+            return null;
         }
 
-        if (other.attachedRigidbody != null)
+        DropZone[] zones = FindObjectsOfType<DropZone>(true);
+        DropZone bestZone = null;
+        float bestDistance = float.MaxValue;
+
+        for (int i = 0; i < zones.Length; i++)
         {
-            item = other.attachedRigidbody.GetComponent<GarbageItem>();
-            if (item != null)
+            DropZone zone = zones[i];
+            if (zone == null || !zone.CanAccept(item))
             {
-                return item;
+                continue;
+            }
+
+            float distance = Vector3.Distance(item.transform.position, zone.transform.position);
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                bestZone = zone;
             }
         }
 
-        item = other.GetComponentInParent<GarbageItem>();
-        if (item != null)
+        return bestZone != null ? bestZone.Classify(item) : null;
+    }
+
+    private bool IsOverlapping(GarbageItem item)
+    {
+        if (_triggerCollider == null)
         {
-            return item;
+            _triggerCollider = GetComponent<Collider>();
         }
 
-        return other.GetComponentInChildren<GarbageItem>();
+        if (_triggerCollider == null)
+        {
+            return false;
+        }
+
+        Collider[] itemColliders = item.GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < itemColliders.Length; i++)
+        {
+            Collider itemCollider = itemColliders[i];
+            if (itemCollider == null || !itemCollider.enabled)
+            {
+                continue;
+            }
+
+            Bounds bounds = itemCollider.bounds;
+            Vector3 closestPoint = _triggerCollider.ClosestPoint(bounds.center);
+            if (_triggerCollider.bounds.Intersects(bounds) || bounds.Contains(closestPoint))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

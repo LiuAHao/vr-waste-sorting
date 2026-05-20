@@ -2,6 +2,9 @@
 
 public class Player : MonoBehaviour
 {
+    private const float MinLookPitch = -75f;
+    private const float MaxLookPitch = 55f;
+
     public float moveSpeed = 5f;
     public float jumpForce = 5f;
     public float rotationSpeed = 5f;
@@ -40,7 +43,7 @@ public class Player : MonoBehaviour
 
         float mouseY = Input.GetAxis("Mouse Y");
         _verticalRotation -= mouseY * 2f;
-        _verticalRotation = Mathf.Clamp(_verticalRotation, -45f, 45f);
+        _verticalRotation = Mathf.Clamp(_verticalRotation, MinLookPitch, MaxLookPitch);
 
         Camera mainCamera = Camera.main;
         if (mainCamera != null)

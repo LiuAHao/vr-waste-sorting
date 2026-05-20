@@ -26,38 +26,39 @@ public sealed class WasteHudView
     {
         GameObject root = WasteUiFactory.CreateCanvasRoot("WasteHUD");
 
-        Image topBar = WasteUiFactory.CreatePanel("TopBar", root.transform, new Color(0.08f, 0.09f, 0.1f, 0.85f));
+        Image topBar = WasteUiFactory.CreatePanel("TopBar", root.transform, new Color(0.07f, 0.09f, 0.1f, 0.9f));
         RectTransform topRect = topBar.rectTransform;
-        topRect.anchorMin = new Vector2(0.04f, 0.9f);
-        topRect.anchorMax = new Vector2(0.96f, 0.985f);
+        topRect.anchorMin = new Vector2(0.02f, 0.89f);
+        topRect.anchorMax = new Vector2(0.98f, 0.985f);
         topRect.offsetMin = Vector2.zero;
         topRect.offsetMax = Vector2.zero;
 
-        Text timerText = WasteUiFactory.CreateText("TimerText", topRect, "时间 00:00", 28, FontStyle.Bold, TextAnchor.MiddleLeft, Color.white);
-        SetAnchors(timerText.rectTransform, new Vector2(0f, 0f), new Vector2(0.33f, 1f), new Vector2(24f, 0f), new Vector2(-12f, 0f));
+        Text timerText = CreateStatCard(topRect, "TimerCard", "TimerText", "时间 00:00", new Vector2(0f, 0f), new Vector2(0.33f, 1f));
+        Text scoreText = CreateStatCard(topRect, "ScoreCard", "ScoreText", "得分 0", new Vector2(0.33f, 0f), new Vector2(0.66f, 1f));
+        Text progressText = CreateStatCard(topRect, "ProgressCard", "ProgressText", "进度 0/0", new Vector2(0.66f, 0f), new Vector2(1f, 1f));
 
-        Text scoreText = WasteUiFactory.CreateText("ScoreText", topRect, "得分 0", 28, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
-        SetAnchors(scoreText.rectTransform, new Vector2(0.33f, 0f), new Vector2(0.66f, 1f), new Vector2(12f, 0f), new Vector2(-12f, 0f));
-
-        Text progressText = WasteUiFactory.CreateText("ProgressText", topRect, "进度 0/0", 28, FontStyle.Bold, TextAnchor.MiddleRight, Color.white);
-        SetAnchors(progressText.rectTransform, new Vector2(0.66f, 0f), new Vector2(1f, 1f), new Vector2(12f, 0f), new Vector2(-24f, 0f));
-
-        Image feedbackPanel = WasteUiFactory.CreatePanel("FeedbackPanel", root.transform, new Color(0.05f, 0.05f, 0.05f, 0.88f));
+        Image feedbackPanel = WasteUiFactory.CreatePanel("FeedbackPanel", root.transform, new Color(0.05f, 0.05f, 0.05f, 0.92f));
         RectTransform feedbackRect = feedbackPanel.rectTransform;
-        feedbackRect.anchorMin = new Vector2(0.5f, 0.82f);
-        feedbackRect.anchorMax = new Vector2(0.5f, 0.82f);
-        feedbackRect.offsetMin = new Vector2(-380f, -10f);
-        feedbackRect.offsetMax = new Vector2(380f, 78f);
+        feedbackRect.anchorMin = new Vector2(0.5f, 0.78f);
+        feedbackRect.anchorMax = new Vector2(0.5f, 0.78f);
+        feedbackRect.sizeDelta = new Vector2(760f, 110f);
 
-        Text feedbackTitleText = WasteUiFactory.CreateText("FeedbackTitle", feedbackPanel.transform, string.Empty, 26, FontStyle.Bold, TextAnchor.UpperCenter, Color.white);
-        SetAnchors(feedbackTitleText.rectTransform, new Vector2(0f, 0.4f), new Vector2(1f, 1f), new Vector2(18f, 0f), new Vector2(-18f, -6f));
+        Text feedbackTitleText = WasteUiFactory.CreateText("FeedbackTitle", feedbackPanel.transform, string.Empty, 28, FontStyle.Bold, TextAnchor.UpperCenter, Color.white);
+        RectTransform feedbackTitleRect = feedbackTitleText.rectTransform;
+        feedbackTitleRect.anchorMin = new Vector2(0f, 0.48f);
+        feedbackTitleRect.anchorMax = new Vector2(1f, 1f);
+        feedbackTitleRect.offsetMin = new Vector2(18f, -4f);
+        feedbackTitleRect.offsetMax = new Vector2(-18f, -8f);
 
         Text feedbackDetailText = WasteUiFactory.CreateText("FeedbackDetail", feedbackPanel.transform, string.Empty, 20, FontStyle.Normal, TextAnchor.UpperCenter, new Color(0.95f, 0.95f, 0.95f, 1f));
-        SetAnchors(feedbackDetailText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0.5f), new Vector2(18f, 6f), new Vector2(-18f, -2f));
+        RectTransform feedbackDetailRect = feedbackDetailText.rectTransform;
+        feedbackDetailRect.anchorMin = new Vector2(0f, 0f);
+        feedbackDetailRect.anchorMax = new Vector2(1f, 0.52f);
+        feedbackDetailRect.offsetMin = new Vector2(20f, 8f);
+        feedbackDetailRect.offsetMax = new Vector2(-20f, -2f);
 
         feedbackPanel.gameObject.SetActive(false);
         root.SetActive(false);
-
         return new WasteHudView(root, timerText, scoreText, progressText, feedbackPanel, feedbackTitleText, feedbackDetailText);
     }
 
@@ -88,12 +89,22 @@ public sealed class WasteHudView
         _feedbackDetailText.text = string.Empty;
     }
 
-    private static void SetAnchors(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
+    private static Text CreateStatCard(Transform parent, string cardName, string textName, string textValue, Vector2 anchorMin, Vector2 anchorMax)
     {
-        rect.anchorMin = anchorMin;
-        rect.anchorMax = anchorMax;
-        rect.offsetMin = offsetMin;
-        rect.offsetMax = offsetMax;
+        Image card = WasteUiFactory.CreatePanel(cardName, parent, new Color(0.13f, 0.17f, 0.2f, 0.96f));
+        RectTransform cardRect = card.rectTransform;
+        cardRect.anchorMin = anchorMin;
+        cardRect.anchorMax = anchorMax;
+        cardRect.offsetMin = new Vector2(10f, 8f);
+        cardRect.offsetMax = new Vector2(-10f, -8f);
+
+        Text label = WasteUiFactory.CreateText(textName, card.transform, textValue, 30, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
+        RectTransform labelRect = label.rectTransform;
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = new Vector2(12f, 6f);
+        labelRect.offsetMax = new Vector2(-12f, -6f);
+        return label;
     }
 
     private static string FormatTime(float seconds)

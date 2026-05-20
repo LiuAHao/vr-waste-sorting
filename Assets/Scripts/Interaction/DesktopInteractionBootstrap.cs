@@ -22,8 +22,7 @@ namespace ParkClean.Interaction
         {
             Player player = Object.FindObjectOfType<Player>();
             Camera cameraRef = Camera.main;
-            GarbageItem item = Object.FindObjectOfType<GarbageItem>();
-            if (player == null || cameraRef == null || item == null)
+            if (player == null || cameraRef == null)
             {
                 return;
             }
@@ -38,27 +37,25 @@ namespace ParkClean.Interaction
                 holdPoint.localRotation = Quaternion.identity;
             }
 
-            LineRenderer lineRenderer = cameraRef.GetComponent<LineRenderer>();
-            if (lineRenderer == null)
-            {
-                lineRenderer = cameraRef.gameObject.AddComponent<LineRenderer>();
-                lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-                lineRenderer.startColor = new Color(1f, 1f, 1f, 0.9f);
-                lineRenderer.endColor = new Color(1f, 1f, 1f, 0.2f);
-            }
-
-            if (cameraRef.GetComponent<CrosshairController>() == null)
-            {
-                cameraRef.gameObject.AddComponent<CrosshairController>();
-            }
-
             DesktopGarbageInteractor interactor = cameraRef.GetComponent<DesktopGarbageInteractor>();
             if (interactor == null)
             {
                 interactor = cameraRef.gameObject.AddComponent<DesktopGarbageInteractor>();
             }
 
-            interactor.Configure(cameraRef, player, holdPoint, lineRenderer);
+            LineRenderer lineRenderer = cameraRef.GetComponent<LineRenderer>();
+            if (lineRenderer != null)
+            {
+                Object.Destroy(lineRenderer);
+            }
+
+            CrosshairController crosshair = cameraRef.GetComponent<CrosshairController>();
+            if (crosshair != null)
+            {
+                Object.Destroy(crosshair);
+            }
+
+            interactor.Configure(cameraRef, player, holdPoint);
         }
     }
 }

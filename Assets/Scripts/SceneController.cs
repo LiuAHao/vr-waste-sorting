@@ -1,16 +1,28 @@
-using UnityEngine;
+锘縰sing UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class SceneController : MonoBehaviour
 {
-    public void ChangeScene(int index)
+    private const string MainSceneName = "2";
+
+    public void LoadMainScene()
     {
-        SceneManager.LoadScene(index); // 加载游戏场景
+        SceneManager.LoadScene(MainSceneName);
+    }
+
+    public void ChangeScene(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName))
+        {
+            Debug.LogWarning("SceneController.ChangeScene received an empty scene name.");
+            return;
+        }
+
+        SceneManager.LoadScene(sceneName);
     }
 
     public void QuitGame()
     {
-        Application.Quit(); // 退出游戏
+        Application.Quit();
     }
-
 }

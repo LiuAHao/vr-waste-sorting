@@ -10,19 +10,17 @@ namespace ParkClean.Interaction
         [SerializeField] private LayerMask interactMask = Physics.DefaultRaycastLayers;
         [SerializeField] private Transform holdPoint;
         [SerializeField] private float followSpeed = 15f;
-        [SerializeField] private LineRenderer rayLine;
 
         private GarbageItem _currentHover;
         private SelectableHighlighter _currentHighlighter;
         private GarbageItem _heldItem;
         private Rigidbody _heldRigidbody;
 
-        public void Configure(Camera cameraRef, Player playerRef, Transform holdPointRef, LineRenderer lineRendererRef)
+        public void Configure(Camera cameraRef, Player playerRef, Transform holdPointRef)
         {
             playerCamera = cameraRef;
             player = playerRef;
             holdPoint = holdPointRef;
-            rayLine = lineRendererRef;
         }
 
         private void Awake()
@@ -41,14 +39,6 @@ namespace ParkClean.Interaction
             {
                 player = FindObjectOfType<Player>();
             }
-
-            if (rayLine != null)
-            {
-                rayLine.positionCount = 2;
-                rayLine.startWidth = 0.01f;
-                rayLine.endWidth = 0.005f;
-                rayLine.useWorldSpace = true;
-            }
         }
 
         private void Update()
@@ -61,11 +51,8 @@ namespace ParkClean.Interaction
                 }
 
                 ClearHover();
-                UpdateVisualRay(false);
                 return;
             }
-
-            UpdateVisualRay(true);
 
             if (_heldItem == null)
             {
@@ -77,6 +64,12 @@ namespace ParkClean.Interaction
             }
             else
             {
+                if (_heldItem.IsCompleted)
+                {
+                    ClearHeldItemState();
+                    return;
+                }
+
                 UpdateHeldItem();
                 if (Input.GetMouseButtonUp(0))
                 {
@@ -91,25 +84,6 @@ namespace ParkClean.Interaction
                 && holdPoint != null
                 && player != null
                 && player.InputEnabled;
-        }
-
-        private void UpdateVisualRay(bool active)
-        {
-            if (rayLine == null || playerCamera == null)
-            {
-                return;
-            }
-
-            rayLine.enabled = active;
-            if (!active)
-            {
-                return;
-            }
-
-            Vector3 startPos = playerCamera.ViewportToWorldPoint(new Vector3(0.5f, 0.5f, 0.8f));
-            Vector3 endPos = startPos + playerCamera.transform.forward * interactDistance;
-            rayLine.SetPosition(0, startPos);
-            rayLine.SetPosition(1, endPos);
         }
 
         private void UpdateSelection()
@@ -161,6 +135,7 @@ namespace ParkClean.Interaction
                 _heldRigidbody.angularVelocity = Vector3.zero;
                 _heldRigidbody.isKinematic = true;
                 _heldRigidbody.useGravity = false;
+                _heldRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             }
 
             _heldItem.SetHeld(true);
@@ -193,6 +168,7 @@ namespace ParkClean.Interaction
                 return;
             }
 
+            GarbageItem releasedItem = _heldItem;
             _heldItem.SetHeld(false);
             if (_heldRigidbody != null)
             {
@@ -200,8 +176,15 @@ namespace ParkClean.Interaction
                 _heldRigidbody.useGravity = true;
                 _heldRigidbody.velocity = Vector3.zero;
                 _heldRigidbody.angularVelocity = Vector3.zero;
+                _heldRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             }
 
+            ClearHeldItemState();
+            DropZone.TryClassifyReleasedItem(releasedItem);
+        }
+
+        private void ClearHeldItemState()
+        {
             _heldItem = null;
             _heldRigidbody = null;
         }

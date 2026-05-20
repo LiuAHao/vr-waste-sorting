@@ -41,6 +41,26 @@ public class GarbageItem : MonoBehaviour
     {
         _isCompleted = true;
         _isHeld = false;
+
+        if (_rigidbody != null)
+        {
+            _rigidbody.velocity = Vector3.zero;
+            _rigidbody.angularVelocity = Vector3.zero;
+            _rigidbody.useGravity = false;
+            _rigidbody.isKinematic = true;
+        }
+
+        Collider[] colliders = GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            colliders[i].enabled = false;
+        }
+
+        Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            renderers[i].enabled = false;
+        }
     }
 
     public void ResetToStartPosition()

@@ -13,6 +13,7 @@ public sealed class WasteGameFlowController
     private readonly List<Player> _players = new List<Player>();
 
     private WasteAnalyticsTracker _analytics;
+    private WasteStartView _startView;
     private WasteHudView _hud;
     private WasteResultView _resultView;
     private System.Action _restartAction;
@@ -24,11 +25,13 @@ public sealed class WasteGameFlowController
     private int _score;
     private int _correctCount;
     private int _wrongCount;
+    private bool _isReadyToStart;
     private bool _hasActiveSession;
     private bool _isFinished;
 
-    public void BindScene(WasteHudView hud, WasteResultView resultView, WasteAnalyticsTracker analytics, System.Action restartAction)
+    public void BindScene(WasteStartView startView, WasteHudView hud, WasteResultView resultView, WasteAnalyticsTracker analytics, System.Action restartAction)
     {
+        _startView = startView;
         _hud = hud;
         _resultView = resultView;
         _analytics = analytics;
@@ -44,8 +47,10 @@ public sealed class WasteGameFlowController
 
         if (_items.Count <= 0)
         {
+            _isReadyToStart = false;
             _hasActiveSession = false;
             _isFinished = false;
+            _startView.Hide();
             _hud.SetVisible(false);
             _hud.HideFeedback();
             _resultView.Hide();
@@ -60,17 +65,38 @@ public sealed class WasteGameFlowController
         _score = 0;
         _correctCount = 0;
         _wrongCount = 0;
+        _isReadyToStart = true;
         _isFinished = false;
-        _hasActiveSession = true;
+        _hasActiveSession = false;
 
         _analytics.BeginSession();
+        SetPlayerInputEnabled(false);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        _startView.Show(BeginSession);
+        _hud.SetVisible(false);
+        _hud.HideFeedback();
+        _resultView.Hide();
+        RefreshHud();
+    }
+
+    public void BeginSession()
+    {
+        if (!_isReadyToStart || _isFinished)
+        {
+            return;
+        }
+
+        _isReadyToStart = false;
+        _hasActiveSession = true;
+        _startView.Hide();
+        _resultView.Hide();
+        _hud.SetVisible(true);
+        _hud.HideFeedback();
         SetPlayerInputEnabled(true);
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-
-        _hud.SetVisible(true);
-        _hud.HideFeedback();
-        _resultView.Hide();
         RefreshHud();
     }
 
@@ -100,7 +126,7 @@ public sealed class WasteGameFlowController
 
         RefreshHud();
 
-        if (_correctCount >= _targetCount)
+        if ((_correctCount + _wrongCount) >= _targetCount)
         {
             EndSession();
         }
@@ -129,11 +155,16 @@ public sealed class WasteGameFlowController
             ShowFeedback(false, "投放错误", BuildWrongDetail(result));
             if (result.Item != null)
             {
-                result.Item.ResetToStartPosition();
+                result.Item.MarkCompleted();
             }
         }
 
         RefreshHud();
+
+        if ((_correctCount + _wrongCount) >= _targetCount)
+        {
+            EndSession();
+        }
     }
 
     private void EndSession()
@@ -169,7 +200,7 @@ public sealed class WasteGameFlowController
 
     private void RefreshHud()
     {
-        _hud.SetStats(_remainingSeconds, _score, _correctCount, _targetCount);
+        _hud.SetStats(_remainingSeconds, _score, _correctCount + _wrongCount, _targetCount);
     }
 
     private void SetPlayerInputEnabled(bool enabled)
@@ -196,7 +227,7 @@ public sealed class WasteGameFlowController
         string itemName = result.Item != null ? result.Item.ItemName : "物品";
         string correctCategory = WasteCategoryText.Format(result.CorrectCategory);
         string reason = string.IsNullOrWhiteSpace(result.Reason) ? "分类不匹配" : result.Reason;
-        return itemName + " 应投放到 " + correctCategory + "。原因: " + reason;
+        return itemName + " 应投放到 " + correctCategory + "。原因：" + reason;
     }
 
     private static int ResolveTargetCount(WasteGameSceneConfig sceneConfig, int itemCount)

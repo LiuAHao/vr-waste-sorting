@@ -1,12 +1,23 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using System.Collections.Generic;
 
 public static class WasteUiFactory
 {
     private static Sprite _whiteSprite;
     private static Font _defaultFont;
+    private static readonly string[] PreferredChineseFonts =
+    {
+        "Microsoft YaHei UI",
+        "Microsoft YaHei",
+        "PingFang SC",
+        "Hiragino Sans GB",
+        "Noto Sans CJK SC",
+        "Source Han Sans SC",
+        "SimHei",
+        "SimSun"
+    };
 
     public static Font DefaultFont
     {
@@ -17,7 +28,13 @@ public static class WasteUiFactory
                 return _defaultFont;
             }
 
-            _defaultFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            _defaultFont = TryCreateChineseOsFont();
+
+            if (_defaultFont == null)
+            {
+                _defaultFont = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            }
+
             if (_defaultFont == null)
             {
                 Font[] fonts = Resources.FindObjectsOfTypeAll<Font>();
@@ -29,7 +46,7 @@ public static class WasteUiFactory
 
             if (_defaultFont == null)
             {
-                Debug.LogError("WasteUiFactory: 未找到可用的内置字体，UI 文本将无法正常显示。");
+                Debug.LogError("WasteUiFactory: 未找到可用的内置字体，UI 文本可能无法正常显示。");
             }
 
             return _defaultFont;
@@ -81,6 +98,11 @@ public static class WasteUiFactory
                 continue;
             }
 
+            if (BelongsToRuntimeUi(text.transform))
+            {
+                continue;
+            }
+
             if (!IsLegacyHudText(text.text))
             {
                 continue;
@@ -89,7 +111,7 @@ public static class WasteUiFactory
             legacyTexts.Add(text.gameObject);
 
             Transform parent = text.transform.parent;
-            if (parent == null)
+            if (parent == null || BelongsToRuntimeUi(parent))
             {
                 continue;
             }
@@ -176,8 +198,8 @@ public static class WasteUiFactory
         colors.pressedColor = backgroundColor * 0.85f;
         button.colors = colors;
 
-        Text text = CreateText("Label", rect, label, 26, FontStyle.Bold, TextAnchor.MiddleCenter, textColor);
-        RectTransform textRect = text.rectTransform;
+        Text buttonText = CreateText("Label", rect, label, 26, FontStyle.Bold, TextAnchor.MiddleCenter, textColor);
+        RectTransform textRect = buttonText.rectTransform;
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
         textRect.offsetMin = Vector2.zero;
@@ -185,6 +207,28 @@ public static class WasteUiFactory
 
         button.onClick.AddListener(() => onClick?.Invoke());
         return button;
+    }
+
+    private static bool BelongsToRuntimeUi(Transform target)
+    {
+        if (target == null)
+        {
+            return false;
+        }
+
+        Transform current = target;
+        while (current != null)
+        {
+            string name = current.name;
+            if (name == "WasteHUD" || name == "WasteResult" || name == "WasteStart")
+            {
+                return true;
+            }
+
+            current = current.parent;
+        }
+
+        return false;
     }
 
     private static Sprite WhiteSprite
@@ -202,6 +246,34 @@ public static class WasteUiFactory
 
     private static bool IsLegacyHudText(string text)
     {
-        return text.StartsWith("倒计时：") || text.StartsWith("清扫垃圾：");
+        return text.StartsWith("倒计时：")
+            || text.StartsWith("清扫垃圾：");
+    }
+
+    private static Font TryCreateChineseOsFont()
+    {
+        for (int i = 0; i < PreferredChineseFonts.Length; i++)
+        {
+            string fontName = PreferredChineseFonts[i];
+            if (string.IsNullOrWhiteSpace(fontName))
+            {
+                continue;
+            }
+
+            try
+            {
+                Font font = Font.CreateDynamicFontFromOSFont(fontName, 32);
+                if (font != null)
+                {
+                    return font;
+                }
+            }
+            catch
+            {
+                // 某些平台或编辑器环境下字体不存在会抛异常，继续尝试下一个候选字体。
+            }
+        }
+
+        return null;
     }
 }

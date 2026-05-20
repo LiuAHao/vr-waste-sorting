@@ -7,6 +7,7 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
     private WasteGameFlowController _flowController;
     private WasteAnalyticsTracker _analytics;
+    private WasteStartView _startView;
     private WasteHudView _hudView;
     private WasteResultView _resultView;
 
@@ -41,6 +42,7 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
         _analytics = new WasteAnalyticsTracker();
         _flowController = new WasteGameFlowController();
+        _startView = WasteStartView.Create(RestartActiveScene);
         _hudView = WasteHudView.Create();
         _resultView = WasteResultView.Create(RestartActiveScene);
         WasteUiFactory.EnsureEventSystem();
@@ -92,7 +94,7 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         }
 
         WasteUiFactory.EnsureEventSystem();
-        _flowController.BindScene(_hudView, _resultView, _analytics, RestartActiveScene);
+        _flowController.BindScene(_startView, _hudView, _resultView, _analytics, RestartActiveScene);
     }
 
     private void RestartActiveScene()
