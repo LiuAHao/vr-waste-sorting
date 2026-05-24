@@ -49,3 +49,6 @@ sysinfo.txt
 # OS files
 .DS_Store
 Thumbs.db
+
+# Keep local embedded glTFast package out of version control.
+Packages/glTFast-5.0.0/
