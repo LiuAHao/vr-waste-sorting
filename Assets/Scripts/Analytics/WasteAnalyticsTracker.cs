@@ -36,6 +36,7 @@ public sealed class WasteAnalyticsTracker
         int score,
         float elapsedSeconds,
         float timeLimitSeconds,
+        bool isTimedChallenge = false,
         string modeName = null,
         string mostMistakenItemName = null,
         int mostMistakenItemCount = 0,
@@ -50,6 +51,7 @@ public sealed class WasteAnalyticsTracker
             elapsedSeconds,
             timeLimitSeconds,
             _records,
+            isTimedChallenge,
             modeName,
             mostMistakenItemName,
             mostMistakenItemCount,
@@ -102,6 +104,7 @@ public sealed class WasteSessionSummary
         float elapsedSeconds,
         float timeLimitSeconds,
         IReadOnlyList<ClassificationRecord> records,
+        bool isTimedChallenge = false,
         string modeName = null,
         string mostMistakenItemName = null,
         int mostMistakenItemCount = 0,
@@ -115,6 +118,7 @@ public sealed class WasteSessionSummary
         ElapsedSeconds = elapsedSeconds;
         TimeLimitSeconds = timeLimitSeconds;
         _records = records;
+        IsTimedChallenge = isTimedChallenge;
         ModeName = modeName;
         MostMistakenItemName = mostMistakenItemName;
         MostMistakenItemCount = mostMistakenItemCount;
@@ -128,6 +132,7 @@ public sealed class WasteSessionSummary
     public int Score { get; }
     public float ElapsedSeconds { get; }
     public float TimeLimitSeconds { get; }
+    public bool IsTimedChallenge { get; }
     public string ModeName { get; }
     public string MostMistakenItemName { get; }
     public int MostMistakenItemCount { get; }
@@ -135,5 +140,4 @@ public sealed class WasteSessionSummary
     public string MistakeSummaryText { get; }
     public float Accuracy => (CorrectCount + WrongCount) <= 0 ? 0f : (float)CorrectCount / (CorrectCount + WrongCount);
     public IReadOnlyList<ClassificationRecord> Records => _records;
-    public bool IsTimedChallenge => !string.IsNullOrWhiteSpace(ModeName) && ModeName.Contains("限时");
 }
