@@ -54,7 +54,14 @@ public sealed class TimedChallengeSceneSetup : MonoBehaviour
             pointObject.transform.SetParent(spawnRoot, false);
             pointObject.transform.position = spawnAreaCenter + offset;
             TimedChallengeSpawnPoint point = pointObject.AddComponent<TimedChallengeSpawnPoint>();
-            point.SetGroupId(spawnPointGroupId);
+            point.SetGroupId(ResolveSpawnPointGroupId());
         }
+    }
+
+    private string ResolveSpawnPointGroupId()
+    {
+        return config != null && !string.IsNullOrWhiteSpace(config.SpawnPointGroupId)
+            ? config.SpawnPointGroupId
+            : "default";
     }
 }
