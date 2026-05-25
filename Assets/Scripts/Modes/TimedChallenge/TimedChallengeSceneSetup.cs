@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [DisallowMultipleComponent]
 public sealed class TimedChallengeSceneSetup : MonoBehaviour
@@ -53,8 +53,7 @@ public sealed class TimedChallengeSceneSetup : MonoBehaviour
             GameObject pointObject = new GameObject("SpawnPoint_" + (index + 1));
             pointObject.transform.SetParent(spawnRoot, false);
             pointObject.transform.position = spawnAreaCenter + offset;
-            TimedChallengeSpawnPoint point = pointObject.AddComponent<TimedChallengeSpawnPoint>();
-            point.SetGroupId(spawnPointGroupId);
+            pointObject.AddComponent<TimedChallengeSpawnPoint>();
         }
     }
 }
