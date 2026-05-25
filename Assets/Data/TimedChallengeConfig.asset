@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: TimedChallengeConfig
   m_EditorClassIdentifier: 
   timeLimitSeconds: 120
-  activeGarbageCount: 5
+  activeGarbageCount: 10
   scorePerCorrect: 100
   penaltyPerWrong: 25
   spawnPointGroupId: default

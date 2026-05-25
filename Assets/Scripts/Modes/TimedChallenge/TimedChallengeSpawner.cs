@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -28,6 +28,7 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
     {
         config = challengeConfig;
         RefreshSpawnPoints();
+        CacheScenePrototypes();
         BuildResolvedItemPool();
         ClearSpawnedItems();
         FillActiveGarbage(config != null ? config.ActiveGarbageCount : 0);
@@ -82,10 +83,42 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
         }
     }
 
+    private void CacheScenePrototypes()
+    {
+        _sceneTemplates.Clear();
+
+        GarbageItem[] sceneItems = FindObjectsOfType<GarbageItem>(true);
+        for (int i = 0; i < sceneItems.Length; i++)
+        {
+            GarbageItem item = sceneItems[i];
+            if (item == null || string.IsNullOrWhiteSpace(item.ItemId))
+            {
+                continue;
+            }
+
+            if (_sceneTemplates.ContainsKey(item.ItemId))
+            {
+                continue;
+            }
+
+            TimedChallengeRuntimeItem runtimeItem = item.GetComponent<TimedChallengeRuntimeItem>();
+            if (runtimeItem != null)
+            {
+                continue;
+            }
+
+            if (spawnedItemsRoot != null && item.transform.IsChildOf(spawnedItemsRoot))
+            {
+                continue;
+            }
+
+            _sceneTemplates[item.ItemId] = item;
+        }
+    }
+
     private void BuildResolvedItemPool()
     {
         _resolvedItemIds.Clear();
-        _sceneTemplates.Clear();
 
         if (config == null)
         {
@@ -419,7 +452,16 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
 
     private static GameObject ResolvePrefab(GarbageContentDefinition definition)
     {
+        if (definition == null || string.IsNullOrWhiteSpace(definition.assetPath))
+        {
+            return null;
+        }
+
+#if UNITY_EDITOR
+        return AssetDatabase.LoadAssetAtPath<GameObject>(definition.assetPath);
+#else
         return null;
+#endif
     }
 
     private GarbageItem FindSceneTemplate(string itemId)
