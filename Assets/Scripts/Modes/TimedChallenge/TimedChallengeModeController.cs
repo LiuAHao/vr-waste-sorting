@@ -163,6 +163,7 @@ public sealed class TimedChallengeModeController : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         _hud.HideFeedback();
+        RestoreSceneGarbage();
 
         TimedChallengeSessionStats stats = TimedChallengeSessionStats.FromRecords(_analytics.Records);
         WasteSessionSummary summary = _analytics.BuildSummary(
@@ -172,6 +173,7 @@ public sealed class TimedChallengeModeController : MonoBehaviour
             _score,
             _timeLimitSeconds - _remainingSeconds,
             _timeLimitSeconds,
+            isTimedChallenge: true,
             modeName: "限时挑战",
             mostMistakenItemName: stats.MostMistakenItemName,
             mostMistakenItemCount: stats.MostMistakenItemCount,
@@ -179,6 +181,11 @@ public sealed class TimedChallengeModeController : MonoBehaviour
             mistakeSummaryText: stats.BuildMistakeSummaryText());
 
         _resultView.Show(summary, _restartAction);
+    }
+
+    private void OnDestroy()
+    {
+        RestoreSceneGarbage();
     }
 
     private void ResetSessionState()
@@ -194,7 +201,8 @@ public sealed class TimedChallengeModeController : MonoBehaviour
 
     private void HideSceneGarbage()
     {
-        _hiddenSceneItems.Clear();
+        RestoreSceneGarbage();
+
         GarbageItem[] sceneItems = FindObjectsOfType<GarbageItem>(true);
         for (int i = 0; i < sceneItems.Length; i++)
         {
@@ -212,6 +220,20 @@ public sealed class TimedChallengeModeController : MonoBehaviour
             item.gameObject.SetActive(false);
             _hiddenSceneItems.Add(item);
         }
+    }
+
+    private void RestoreSceneGarbage()
+    {
+        for (int i = _hiddenSceneItems.Count - 1; i >= 0; i--)
+        {
+            GarbageItem item = _hiddenSceneItems[i];
+            if (item != null)
+            {
+                item.gameObject.SetActive(true);
+            }
+        }
+
+        _hiddenSceneItems.Clear();
     }
 
     private void CachePlayers()
@@ -266,7 +288,7 @@ public sealed class TimedChallengeModeController : MonoBehaviour
     private static string BuildCorrectDetail(ClassificationResult result)
     {
         string itemName = result.Item != null ? result.Item.ItemName : "物品";
-        string binName = result.Bin != null ? result.Bin.DisplayName : "目标桶";
+        string binName = result.Bin != null ? result.Bin.DisplayName : "目标垃圾桶";
         return itemName + " 已正确投入 " + binName;
     }
 
@@ -275,7 +297,7 @@ public sealed class TimedChallengeModeController : MonoBehaviour
         string itemName = result.Item != null ? result.Item.ItemName : "物品";
         string correctCategory = WasteCategoryText.Format(result.CorrectCategory);
         string reason = string.IsNullOrWhiteSpace(result.Reason) ? "分类不匹配" : result.Reason;
-        return itemName + " 应投放到 " + correctCategory + "。原因：" + reason;
+        return itemName + " 应投入 " + correctCategory + "。原因：" + reason;
     }
 }
 
@@ -350,7 +372,7 @@ public sealed class TimedChallengeSessionStats
         }
 
         return "你在限定时间内完成了 " + TotalProcessedCount + " 次分类，其中 " + correctCount + " 次正确。最容易混淆的是 "
-            + MostMistakenItemName + "，建议下一轮重点练习该类物品判断。";
+            + MostMistakenItemName + "，建议下一轮重点练习这类物品判断。";
     }
 
     private int CountMistakes()

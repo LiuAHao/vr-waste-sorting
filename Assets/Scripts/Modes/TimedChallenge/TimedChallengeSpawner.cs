@@ -12,6 +12,8 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
     private readonly List<GarbageItem> _activeItems = new List<GarbageItem>();
     private readonly List<TimedChallengeSpawnPoint> _spawnPoints = new List<TimedChallengeSpawnPoint>();
     private readonly List<string> _resolvedItemIds = new List<string>();
+    private readonly Dictionary<string, GarbageItem> _prototypeByItemId = new Dictionary<string, GarbageItem>();
+    private readonly Dictionary<GarbageItem, TimedChallengeSpawnPoint> _spawnPointByItem = new Dictionary<GarbageItem, TimedChallengeSpawnPoint>();
 
     public IReadOnlyList<GarbageItem> ActiveItems => _activeItems;
 
@@ -27,6 +29,7 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
     {
         config = challengeConfig;
         RefreshSpawnPoints();
+        CacheScenePrototypes();
         BuildResolvedItemPool();
         ClearSpawnedItems();
         FillActiveGarbage(config != null ? config.ActiveGarbageCount : 0);
@@ -57,6 +60,7 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
         }
 
         _activeItems.Clear();
+        _spawnPointByItem.Clear();
 
         for (int i = 0; i < _spawnPoints.Count; i++)
         {
@@ -78,6 +82,28 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
                 point.SetOccupied(false);
                 _spawnPoints.Add(point);
             }
+        }
+    }
+
+    private void CacheScenePrototypes()
+    {
+        _prototypeByItemId.Clear();
+
+        GarbageItem[] sceneItems = FindObjectsOfType<GarbageItem>(true);
+        for (int i = 0; i < sceneItems.Length; i++)
+        {
+            GarbageItem item = sceneItems[i];
+            if (item == null || string.IsNullOrWhiteSpace(item.ItemId))
+            {
+                continue;
+            }
+
+            if (_prototypeByItemId.ContainsKey(item.ItemId))
+            {
+                continue;
+            }
+
+            _prototypeByItemId[item.ItemId] = item;
         }
     }
 
@@ -104,7 +130,7 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
                 continue;
             }
 
-            if (ResolvePrefab(entry) == null)
+            if (ResolvePrefab(entry) == null && ResolvePrototype(entry.itemId) == null)
             {
                 continue;
             }
@@ -131,7 +157,7 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
                 continue;
             }
 
-            if (ResolvePrefab(definition) == null)
+            if (!CanResolveRuntimeSource(definition))
             {
                 continue;
             }
@@ -195,6 +221,7 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
         spawnPoint.SetOccupied(true);
         instance.transform.SetParent(GetSpawnRoot(), true);
         _activeItems.Add(garbageItem);
+        _spawnPointByItem[garbageItem] = spawnPoint;
         return true;
     }
 
@@ -206,6 +233,10 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
         {
             GarbageContentDefinition definition = config.FindCatalogDefinition(itemId);
             prefab = ResolvePrefab(definition);
+            if (prefab == null)
+            {
+                prefab = ResolvePrototype(itemId);
+            }
         }
 
         if (prefab == null)
@@ -346,29 +377,14 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
             return;
         }
 
-        Vector3 itemPosition = item.transform.position;
-        TimedChallengeSpawnPoint closest = null;
-        float closestDistance = float.MaxValue;
-
-        for (int i = 0; i < _spawnPoints.Count; i++)
+        if (_spawnPointByItem.TryGetValue(item, out TimedChallengeSpawnPoint spawnPoint))
         {
-            TimedChallengeSpawnPoint point = _spawnPoints[i];
-            if (point == null || !point.IsOccupied)
+            if (spawnPoint != null)
             {
-                continue;
+                spawnPoint.SetOccupied(false);
             }
 
-            float distance = Vector3.Distance(itemPosition, point.Position);
-            if (distance < closestDistance)
-            {
-                closestDistance = distance;
-                closest = point;
-            }
-        }
-
-        if (closest != null)
-        {
-            closest.SetOccupied(false);
+            _spawnPointByItem.Remove(item);
         }
     }
 
@@ -413,5 +429,35 @@ public sealed class TimedChallengeSpawner : MonoBehaviour
 #else
         return null;
 #endif
+    }
+
+    private bool CanResolveRuntimeSource(GarbageContentDefinition definition)
+    {
+        if (definition == null || string.IsNullOrWhiteSpace(definition.itemId))
+        {
+            return false;
+        }
+
+        if (ResolvePrefab(definition) != null)
+        {
+            return true;
+        }
+
+        return _prototypeByItemId.ContainsKey(definition.itemId);
+    }
+
+    private GameObject ResolvePrototype(string itemId)
+    {
+        if (string.IsNullOrWhiteSpace(itemId))
+        {
+            return null;
+        }
+
+        if (_prototypeByItemId.TryGetValue(itemId, out GarbageItem prototype) && prototype != null)
+        {
+            return prototype.gameObject;
+        }
+
+        return null;
     }
 }

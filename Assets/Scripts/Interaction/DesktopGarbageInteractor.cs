@@ -133,9 +133,9 @@ namespace ParkClean.Interaction
             {
                 _heldRigidbody.velocity = Vector3.zero;
                 _heldRigidbody.angularVelocity = Vector3.zero;
+                _heldRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
                 _heldRigidbody.isKinematic = true;
                 _heldRigidbody.useGravity = false;
-                _heldRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             }
 
             _heldItem.SetHeld(true);
@@ -172,11 +172,11 @@ namespace ParkClean.Interaction
             _heldItem.SetHeld(false);
             if (_heldRigidbody != null)
             {
+                _heldRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 _heldRigidbody.isKinematic = false;
                 _heldRigidbody.useGravity = true;
                 _heldRigidbody.velocity = Vector3.zero;
                 _heldRigidbody.angularVelocity = Vector3.zero;
-                _heldRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             }
 
             ClearHeldItemState();

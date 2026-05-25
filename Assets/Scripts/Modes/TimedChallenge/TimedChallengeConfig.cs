@@ -6,7 +6,7 @@ public sealed class TimedChallengeConfig : ScriptableObject
 {
     [Header("Session")]
     [SerializeField] private float timeLimitSeconds = 120f;
-    [SerializeField] private int activeGarbageCount = 5;
+    [SerializeField] private int activeGarbageCount = 10;
 
     [Header("Scoring")]
     [SerializeField] private int scorePerCorrect = 100;

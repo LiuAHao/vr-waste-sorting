@@ -48,7 +48,7 @@ public sealed class WasteStartView
         Text goalText = WasteUiFactory.CreateText(
             "GoalText",
             goalPanel.transform,
-            "本次体验目标\n• 观察垃圾外观并完成分类判断\n• 将垃圾投放进对应垃圾桶\n• 提高正确率并在规定时间内完成任务",
+            "本次体验目标\n• 观察垃圾外观并完成分类判断\n• 将垃圾投入对应的垃圾桶\n• 提高正确率并在规定时间内完成任务",
             28,
             FontStyle.Bold,
             TextAnchor.UpperLeft,

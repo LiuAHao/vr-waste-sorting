@@ -4,10 +4,9 @@ using UnityEngine;
 public sealed class TimedChallengeSceneSetup : MonoBehaviour
 {
     [SerializeField] private TimedChallengeConfig config;
-    [SerializeField] private int spawnPointCount = 10;
+    [SerializeField] private int spawnPointCount = 12;
     [SerializeField] private Vector3 spawnAreaCenter = new Vector3(80f, 0.6f, 48f);
     [SerializeField] private float spawnRadius = 20f;
-    [SerializeField] private string spawnPointGroupId = "default";
 
     private void Awake()
     {
