@@ -10,6 +10,7 @@ public sealed class WasteGameBootstrap : MonoBehaviour
     private WasteStartView _startView;
     private WasteHudView _hudView;
     private WasteResultView _resultView;
+    private TimedChallengeModeController _timedChallengeController;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
@@ -42,7 +43,7 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
         _analytics = new WasteAnalyticsTracker();
         _flowController = new WasteGameFlowController();
-        _startView = WasteStartView.Create(RestartActiveScene);
+        _startView = WasteStartView.Create(RestartActiveScene, null);
         _hudView = WasteHudView.Create();
         _resultView = WasteResultView.Create(RestartActiveScene);
         WasteUiFactory.EnsureEventSystem();
@@ -67,6 +68,12 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
     private void Update()
     {
+        if (_timedChallengeController != null && _timedChallengeController.IsSessionActive)
+        {
+            _timedChallengeController.Tick(Time.deltaTime);
+            return;
+        }
+
         if (_flowController != null)
         {
             _flowController.Tick(Time.deltaTime);
@@ -80,6 +87,12 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
     private void HandleClassified(ClassificationResult result)
     {
+        if (_timedChallengeController != null && _timedChallengeController.IsSessionActive)
+        {
+            _timedChallengeController.HandleClassification(result);
+            return;
+        }
+
         if (_flowController != null)
         {
             _flowController.HandleClassification(result);
@@ -94,7 +107,28 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         }
 
         WasteUiFactory.EnsureEventSystem();
-        _flowController.BindScene(_startView, _hudView, _resultView, _analytics, RestartActiveScene);
+        _timedChallengeController = Object.FindObjectOfType<TimedChallengeModeController>();
+
+        System.Action timedChallengeAction = null;
+        if (_timedChallengeController != null)
+        {
+            _timedChallengeController.Configure(_hudView, _resultView, _analytics, RestartActiveScene);
+            timedChallengeAction = BeginTimedChallengeSession;
+        }
+
+        _flowController.BindScene(_startView, _hudView, _resultView, _analytics, RestartActiveScene, timedChallengeAction);
+    }
+
+    private void BeginTimedChallengeSession()
+    {
+        if (_timedChallengeController == null)
+        {
+            return;
+        }
+
+        _startView.Hide();
+        _resultView.Hide();
+        _timedChallengeController.StartChallenge();
     }
 
     private void RestartActiveScene()

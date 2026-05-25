@@ -29,7 +29,13 @@ public sealed class WasteGameFlowController
     private bool _hasActiveSession;
     private bool _isFinished;
 
-    public void BindScene(WasteStartView startView, WasteHudView hud, WasteResultView resultView, WasteAnalyticsTracker analytics, System.Action restartAction)
+    public void BindScene(
+        WasteStartView startView,
+        WasteHudView hud,
+        WasteResultView resultView,
+        WasteAnalyticsTracker analytics,
+        System.Action restartAction,
+        System.Action timedChallengeAction = null)
     {
         _startView = startView;
         _hud = hud;
@@ -74,7 +80,7 @@ public sealed class WasteGameFlowController
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        _startView.Show(BeginSession);
+        _startView.Show(BeginSession, timedChallengeAction);
         _hud.SetVisible(false);
         _hud.HideFeedback();
         _resultView.Hide();

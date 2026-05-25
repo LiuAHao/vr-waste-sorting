@@ -5,14 +5,21 @@ public sealed class WasteStartView
 {
     private readonly GameObject _root;
     private readonly Button _startButton;
+    private readonly Button _timedChallengeButton;
 
-    private WasteStartView(GameObject root, Button startButton)
+    private WasteStartView(GameObject root, Button startButton, Button timedChallengeButton)
     {
         _root = root;
         _startButton = startButton;
+        _timedChallengeButton = timedChallengeButton;
     }
 
     public static WasteStartView Create(System.Action startAction)
+    {
+        return Create(startAction, null);
+    }
+
+    public static WasteStartView Create(System.Action startAction, System.Action timedChallengeAction)
     {
         GameObject root = WasteUiFactory.CreateCanvasRoot("WasteStart");
 
@@ -66,17 +73,49 @@ public sealed class WasteStartView
         startButtonRect.anchorMin = new Vector2(0.5f, 0f);
         startButtonRect.anchorMax = new Vector2(0.5f, 0f);
         startButtonRect.sizeDelta = new Vector2(300f, 72f);
-        startButtonRect.anchoredPosition = new Vector2(0f, 48f);
+        startButtonRect.anchoredPosition = new Vector2(-170f, 48f);
+
+        Button timedChallengeButton = WasteUiFactory.CreateButton(
+            "TimedChallengeButton",
+            panelRect,
+            "限时挑战",
+            new Color(0.17f, 0.44f, 0.94f, 1f),
+            Color.white,
+            timedChallengeAction);
+        RectTransform timedButtonRect = timedChallengeButton.GetComponent<RectTransform>();
+        timedButtonRect.anchorMin = new Vector2(0.5f, 0f);
+        timedButtonRect.anchorMax = new Vector2(0.5f, 0f);
+        timedButtonRect.sizeDelta = new Vector2(300f, 72f);
+        timedButtonRect.anchoredPosition = new Vector2(170f, 48f);
+        timedChallengeButton.gameObject.SetActive(timedChallengeAction != null);
 
         root.SetActive(false);
-        return new WasteStartView(root, startButton);
+        return new WasteStartView(root, startButton, timedChallengeButton);
     }
 
     public void Show(System.Action startAction)
     {
+        Show(startAction, null);
+    }
+
+    public void Show(System.Action startAction, System.Action timedChallengeAction)
+    {
         _root.SetActive(true);
         _startButton.onClick.RemoveAllListeners();
         _startButton.onClick.AddListener(() => startAction?.Invoke());
+
+        RectTransform startButtonRect = _startButton.GetComponent<RectTransform>();
+        startButtonRect.anchoredPosition = new Vector2(timedChallengeAction != null ? -170f : 0f, 48f);
+
+        if (_timedChallengeButton != null)
+        {
+            _timedChallengeButton.gameObject.SetActive(timedChallengeAction != null);
+            _timedChallengeButton.onClick.RemoveAllListeners();
+            if (timedChallengeAction != null)
+            {
+                _timedChallengeButton.onClick.AddListener(() => timedChallengeAction.Invoke());
+            }
+        }
     }
 
     public void Hide()

@@ -67,6 +67,13 @@ public sealed class WasteHudView
         _root.SetActive(visible);
     }
 
+    public void SetTimedChallengeStats(float remainingSeconds, int score, int processedCount)
+    {
+        _timerText.text = "时间 " + FormatTime(remainingSeconds);
+        _scoreText.text = "得分 " + score;
+        _progressText.text = "已处理 " + processedCount;
+    }
+
     public void SetStats(float remainingSeconds, int score, int completed, int total)
     {
         _timerText.text = "时间 " + FormatTime(remainingSeconds);

@@ -29,9 +29,32 @@ public sealed class WasteAnalyticsTracker
             sessionTime));
     }
 
-    public WasteSessionSummary BuildSummary(int totalTargets, int correctCount, int wrongCount, int score, float elapsedSeconds, float timeLimitSeconds)
+    public WasteSessionSummary BuildSummary(
+        int totalTargets,
+        int correctCount,
+        int wrongCount,
+        int score,
+        float elapsedSeconds,
+        float timeLimitSeconds,
+        string modeName = null,
+        string mostMistakenItemName = null,
+        int mostMistakenItemCount = 0,
+        int totalProcessedCount = -1,
+        string mistakeSummaryText = null)
     {
-        return new WasteSessionSummary(totalTargets, correctCount, wrongCount, score, elapsedSeconds, timeLimitSeconds, _records);
+        return new WasteSessionSummary(
+            totalTargets,
+            correctCount,
+            wrongCount,
+            score,
+            elapsedSeconds,
+            timeLimitSeconds,
+            _records,
+            modeName,
+            mostMistakenItemName,
+            mostMistakenItemCount,
+            totalProcessedCount,
+            mistakeSummaryText);
     }
 }
 
@@ -78,7 +101,12 @@ public sealed class WasteSessionSummary
         int score,
         float elapsedSeconds,
         float timeLimitSeconds,
-        IReadOnlyList<ClassificationRecord> records)
+        IReadOnlyList<ClassificationRecord> records,
+        string modeName = null,
+        string mostMistakenItemName = null,
+        int mostMistakenItemCount = 0,
+        int totalProcessedCount = -1,
+        string mistakeSummaryText = null)
     {
         TotalTargets = totalTargets;
         CorrectCount = correctCount;
@@ -87,6 +115,11 @@ public sealed class WasteSessionSummary
         ElapsedSeconds = elapsedSeconds;
         TimeLimitSeconds = timeLimitSeconds;
         _records = records;
+        ModeName = modeName;
+        MostMistakenItemName = mostMistakenItemName;
+        MostMistakenItemCount = mostMistakenItemCount;
+        TotalProcessedCount = totalProcessedCount >= 0 ? totalProcessedCount : correctCount + wrongCount;
+        MistakeSummaryText = mistakeSummaryText;
     }
 
     public int TotalTargets { get; }
@@ -95,6 +128,12 @@ public sealed class WasteSessionSummary
     public int Score { get; }
     public float ElapsedSeconds { get; }
     public float TimeLimitSeconds { get; }
+    public string ModeName { get; }
+    public string MostMistakenItemName { get; }
+    public int MostMistakenItemCount { get; }
+    public int TotalProcessedCount { get; }
+    public string MistakeSummaryText { get; }
     public float Accuracy => (CorrectCount + WrongCount) <= 0 ? 0f : (float)CorrectCount / (CorrectCount + WrongCount);
     public IReadOnlyList<ClassificationRecord> Records => _records;
+    public bool IsTimedChallenge => !string.IsNullOrWhiteSpace(ModeName) && ModeName.Contains("限时");
 }

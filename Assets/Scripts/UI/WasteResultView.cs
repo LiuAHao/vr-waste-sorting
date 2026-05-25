@@ -137,8 +137,12 @@ public sealed class WasteResultView
         _restartButton.onClick.RemoveAllListeners();
         _restartButton.onClick.AddListener(() => restartAction?.Invoke());
 
-        _titleText.text = summary.CorrectCount >= summary.TotalTargets ? "分类完成" : "时间到";
-        _summaryText.text = $"正确 {summary.CorrectCount}/{summary.TotalTargets}    错误 {summary.WrongCount}";
+        _titleText.text = summary.IsTimedChallenge
+            ? "限时挑战 · 时间到"
+            : (summary.CorrectCount >= summary.TotalTargets ? "分类完成" : "时间到");
+        _summaryText.text = summary.IsTimedChallenge
+            ? $"模式 {summary.ModeName}    正确 {summary.CorrectCount}    错误 {summary.WrongCount}    总处理 {summary.TotalProcessedCount}"
+            : $"正确 {summary.CorrectCount}/{summary.TotalTargets}    错误 {summary.WrongCount}";
         _accuracyText.text = FormatPercent(summary.Accuracy);
         _timeText.text = FormatTime(summary.ElapsedSeconds) + " / " + FormatTime(summary.TimeLimitSeconds);
         _scoreText.text = summary.Score.ToString();
@@ -209,6 +213,11 @@ public sealed class WasteResultView
 
     private static string BuildImpactMessage(WasteSessionSummary summary)
     {
+        if (!string.IsNullOrWhiteSpace(summary.MistakeSummaryText))
+        {
+            return summary.MistakeSummaryText;
+        }
+
         if (summary.TotalTargets <= 0)
         {
             return "本轮没有可统计的分类目标。";
