@@ -1,0 +1,136 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d15b3afb5210c342b5a6dd8041f192b, type: 3}
+  m_Name: WasteContentCatalog
+  m_EditorClassIdentifier: 
+  garbageItems:
+  - itemId: garbage_plastic_bottle
+    itemName: "\u5851\u6599\u74F6"
+    category: 0
+    wrongReason: "\u5E72\u51C0\u5851\u6599\u74F6\u5C5E\u4E8E\u53EF\u56DE\u6536\u7269\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_plastic_bottle.glb
+    position: {x: 80.93, y: 0.6, z: 48.016}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 0.4, y: 0.4, z: 0.4}
+  - itemId: garbage_cardboard_box
+    itemName: "\u7EB8\u7BB1"
+    category: 0
+    wrongReason: "\u5E72\u51C0\u7EB8\u7BB1\u53EF\u4EE5\u56DE\u6536\u518D\u5229\u7528\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_cardboard_box.glb
+    position: {x: 75.9, y: 0.6, z: 48}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 1, y: 1, z: 1}
+  - itemId: garbage_aluminum_can
+    itemName: "\u6613\u62C9\u7F50"
+    category: 0
+    wrongReason: "\u6613\u62C9\u7F50\u5C5E\u4E8E\u53EF\u56DE\u6536\u7269\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_aluminum_can.glb
+    position: {x: 77.9, y: 0.6, z: 48}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 0.3, y: 0.3, z: 0.3}
+  - itemId: garbage_leftover_rice
+    itemName: "\u5269\u996D"
+    category: 2
+    wrongReason: "\u5269\u996D\u5C5E\u4E8E\u53A8\u4F59\u5783\u573E\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_leftover_rice.glb
+    position: {x: 79.9, y: 0.6, z: 48}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 0.6, y: 0.6, z: 0.6}
+  - itemId: garbage_fruit_peel
+    itemName: "\u679C\u76AE"
+    category: 2
+    wrongReason: "\u679C\u76AE\u6613\u8150\u70C2\uFF0C\u5C5E\u4E8E\u53A8\u4F59\u5783\u573E\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_fruit_peel.glb
+    position: {x: 81.9, y: 0.6, z: 48}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 0.6, y: 0.6, z: 0.6}
+  - itemId: garbage_vegetable_leaf
+    itemName: "\u83DC\u53F6"
+    category: 2
+    wrongReason: "\u83DC\u53F6\u5C5E\u4E8E\u53A8\u4F59\u5783\u573E\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_vegetable_leaf.glb
+    position: {x: 83.9, y: 0.6, z: 48}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 0.6, y: 0.6, z: 0.6}
+  - itemId: garbage_battery
+    itemName: "\u65E7\u7535\u6C60"
+    category: 1
+    wrongReason: "\u65E7\u7535\u6C60\u53EF\u80FD\u6C61\u67D3\u73AF\u5883\uFF0C\u5C5E\u4E8E\u6709\u5BB3\u5783\u573E\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_battery.glb
+    position: {x: 78.957, y: 0.861, z: 48.271}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 0.2, y: 0.2, z: 0.2}
+  - itemId: garbage_expired_medicine
+    itemName: "\u8FC7\u671F\u836F\u54C1"
+    category: 1
+    wrongReason: "\u8FC7\u671F\u836F\u54C1\u9700\u8981\u7279\u6B8A\u5904\u7406\uFF0C\u5C5E\u4E8E\u6709\u5BB3\u5783\u573E\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_expired_medicine.glb
+    position: {x: 75.92, y: 0.85, z: 45}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 0.6, y: 0.6, z: 0.6}
+  - itemId: garbage_lamp_tube
+    itemName: "\u706F\u7BA1"
+    category: 1
+    wrongReason: "\u5E9F\u65E7\u706F\u7BA1\u9700\u8981\u7279\u6B8A\u5904\u7406\uFF0C\u5C5E\u4E8E\u6709\u5BB3\u5783\u573E\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_lamp_tube.glb
+    position: {x: 77.9, y: 0.6, z: 45}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 0.8, y: 0.8, z: 0.8}
+  - itemId: garbage_dirty_tissue
+    itemName: "\u6C61\u635F\u7EB8\u5DFE"
+    category: 3
+    wrongReason: "\u6C61\u635F\u7EB8\u5DFE\u4E0D\u53EF\u56DE\u6536\uFF0C\u5E94\u6295\u5165\u5176\u4ED6\u5783\u573E\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_dirty_tissue.glb
+    position: {x: 79.9, y: 0.6, z: 45}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 0.4, y: 0.4, z: 0.4}
+  - itemId: garbage_milk_tea_cup
+    itemName: "\u5976\u8336\u676F"
+    category: 3
+    wrongReason: "\u5E26\u6B8B\u7559\u6DB2\u4F53\u7684\u5976\u8336\u676F\u5E94\u6309\u5176\u4ED6\u5783\u573E\u5904\u7406\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_milk_tea_cup.glb
+    position: {x: 81.9, y: 0.6, z: 45}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 0.4, y: 0.4, z: 0.4}
+  - itemId: garbage_oily_takeout_box
+    itemName: "\u6CB9\u6C61\u5916\u5356\u76D2"
+    category: 3
+    wrongReason: "\u5E26\u6CB9\u6C61\u7684\u5916\u5356\u76D2\u4E0D\u9002\u5408\u4F5C\u4E3A\u53EF\u56DE\u6536\u7269\uFF0C\u5E94\u6295\u5165\u5176\u4ED6\u5783\u573E\u3002"
+    assetPath: Assets/Art/GarbageItems/garbage_oily_takeout_box.glb
+    position: {x: 83.9, y: 0.6, z: 45}
+    rotationEuler: {x: 90, y: 0, z: 0}
+    scale: {x: 0.6, y: 0.6, z: 0.6}
+  trashBins:
+  - displayName: "\u53EF\u56DE\u6536\u7269"
+    category: 0
+    assetPath: Assets/Art/TrashBins/bin_recyclable_blue.glb
+    position: {x: 72, y: 0, z: 52}
+    rotationEuler: {x: -0, y: 90, z: 0}
+    scale: {x: 2.05, y: 2.05, z: 2.05}
+  - displayName: "\u6709\u5BB3\u5783\u573E"
+    category: 1
+    assetPath: Assets/Art/TrashBins/bin_hazardous_red.glb
+    position: {x: 72, y: 0, z: 55}
+    rotationEuler: {x: -0, y: 90, z: 0}
+    scale: {x: 2.05, y: 2.05, z: 2.05}
+  - displayName: "\u53A8\u4F59\u5783\u573E"
+    category: 2
+    assetPath: Assets/Art/TrashBins/bin_kitchen_green.glb
+    position: {x: 72, y: 0, z: 58}
+    rotationEuler: {x: -0, y: 90, z: 0}
+    scale: {x: 2.05, y: 2.05, z: 2.05}
+  - displayName: "\u5176\u4ED6\u5783\u573E"
+    category: 3
+    assetPath: Assets/Art/TrashBins/bin_other_gray.glb
+    position: {x: 72, y: 0, z: 61}
+    rotationEuler: {x: -0, y: 90, z: 0}
+    scale: {x: 2.05, y: 2.05, z: 2.05}
