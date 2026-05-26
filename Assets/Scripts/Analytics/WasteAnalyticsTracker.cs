@@ -13,6 +13,11 @@ public sealed class WasteAnalyticsTracker
 
     public void RecordClassification(ClassificationResult result, float sessionTime)
     {
+        RecordClassification(result, sessionTime, -1, null);
+    }
+
+    public void RecordClassification(ClassificationResult result, float sessionTime, int stageIndex, string stageName)
+    {
         if (result == null)
         {
             return;
@@ -26,7 +31,9 @@ public sealed class WasteAnalyticsTracker
             result.SelectedCategory,
             result.IsCorrect,
             result.Reason,
-            sessionTime));
+            sessionTime,
+            stageIndex,
+            stageName));
     }
 
     public WasteSessionSummary BuildSummary(
@@ -41,7 +48,12 @@ public sealed class WasteAnalyticsTracker
         string mostMistakenItemName = null,
         int mostMistakenItemCount = 0,
         int totalProcessedCount = -1,
-        string mistakeSummaryText = null)
+        string mistakeSummaryText = null,
+        bool isStageProgression = false,
+        int clearedStageCount = 0,
+        int failedStageIndex = -1,
+        bool allStagesCleared = false,
+        string selectedDifficultyName = null)
     {
         return new WasteSessionSummary(
             totalTargets,
@@ -56,7 +68,12 @@ public sealed class WasteAnalyticsTracker
             mostMistakenItemName,
             mostMistakenItemCount,
             totalProcessedCount,
-            mistakeSummaryText);
+            mistakeSummaryText,
+            isStageProgression,
+            clearedStageCount,
+            failedStageIndex,
+            allStagesCleared,
+            selectedDifficultyName);
     }
 }
 
@@ -70,7 +87,9 @@ public sealed class ClassificationRecord
         WasteCategory selectedCategory,
         bool isCorrect,
         string reason,
-        float sessionTime)
+        float sessionTime,
+        int stageIndex = -1,
+        string stageName = null)
     {
         ItemId = itemId;
         ItemName = itemName;
@@ -80,6 +99,8 @@ public sealed class ClassificationRecord
         IsCorrect = isCorrect;
         Reason = reason;
         SessionTime = sessionTime;
+        StageIndex = stageIndex;
+        StageName = stageName;
     }
 
     public string ItemId { get; }
@@ -90,6 +111,8 @@ public sealed class ClassificationRecord
     public bool IsCorrect { get; }
     public string Reason { get; }
     public float SessionTime { get; }
+    public int StageIndex { get; }
+    public string StageName { get; }
 }
 
 public sealed class WasteSessionSummary
@@ -109,7 +132,12 @@ public sealed class WasteSessionSummary
         string mostMistakenItemName = null,
         int mostMistakenItemCount = 0,
         int totalProcessedCount = -1,
-        string mistakeSummaryText = null)
+        string mistakeSummaryText = null,
+        bool isStageProgression = false,
+        int clearedStageCount = 0,
+        int failedStageIndex = -1,
+        bool allStagesCleared = false,
+        string selectedDifficultyName = null)
     {
         TotalTargets = totalTargets;
         CorrectCount = correctCount;
@@ -119,11 +147,16 @@ public sealed class WasteSessionSummary
         TimeLimitSeconds = timeLimitSeconds;
         _records = records;
         IsTimedChallenge = isTimedChallenge;
+        IsStageProgression = isStageProgression;
         ModeName = modeName;
         MostMistakenItemName = mostMistakenItemName;
         MostMistakenItemCount = mostMistakenItemCount;
         TotalProcessedCount = totalProcessedCount >= 0 ? totalProcessedCount : correctCount + wrongCount;
         MistakeSummaryText = mistakeSummaryText;
+        ClearedStageCount = clearedStageCount;
+        FailedStageIndex = failedStageIndex;
+        AllStagesCleared = allStagesCleared;
+        SelectedDifficultyName = selectedDifficultyName;
     }
 
     public int TotalTargets { get; }
@@ -133,11 +166,16 @@ public sealed class WasteSessionSummary
     public float ElapsedSeconds { get; }
     public float TimeLimitSeconds { get; }
     public bool IsTimedChallenge { get; }
+    public bool IsStageProgression { get; }
     public string ModeName { get; }
     public string MostMistakenItemName { get; }
     public int MostMistakenItemCount { get; }
     public int TotalProcessedCount { get; }
     public string MistakeSummaryText { get; }
+    public int ClearedStageCount { get; }
+    public int FailedStageIndex { get; }
+    public bool AllStagesCleared { get; }
+    public string SelectedDifficultyName { get; }
     public float Accuracy => (CorrectCount + WrongCount) <= 0 ? 0f : (float)CorrectCount / (CorrectCount + WrongCount);
     public IReadOnlyList<ClassificationRecord> Records => _records;
 }

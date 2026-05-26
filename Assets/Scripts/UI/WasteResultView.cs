@@ -155,25 +155,54 @@ public sealed class WasteResultView
     {
         _root.SetActive(true);
         _restartButton.onClick.RemoveAllListeners();
-        _restartButton.onClick.AddListener(() => restartAction?.Invoke());
         _backToMenuButton.onClick.RemoveAllListeners();
-        _backToMenuButton.onClick.AddListener(() => backToMenuAction?.Invoke());
 
-        _titleText.text = summary.IsTimedChallenge
-            ? summary.ModeName + " · 结算"
-            : (summary.CorrectCount >= summary.TotalTargets ? "分类完成" : "时间到");
-        _summaryText.text = summary.IsTimedChallenge
-            ? $"模式 {summary.ModeName}    正确 {summary.CorrectCount}    错误 {summary.WrongCount}    总处理 {summary.TotalProcessedCount}"
-            : $"正确 {summary.CorrectCount}/{summary.TotalTargets}    错误 {summary.WrongCount}";
+        if (summary.IsStageProgression)
+        {
+            System.Action returnToStart = restartAction;
+            if (returnToStart == null && WasteGameBootstrap.Instance != null)
+            {
+                returnToStart = WasteGameBootstrap.Instance.ReturnToStartMenu;
+            }
+
+            _restartButton.GetComponentInChildren<Text>().text = "返回开始";
+            _restartButton.onClick.AddListener(() => returnToStart?.Invoke());
+            _backToMenuButton.gameObject.SetActive(false);
+
+            _titleText.text = summary.AllStagesCleared
+                ? "标准闯关 · 挑战成功"
+                : "标准闯关 · 闯关结束";
+            _summaryText.text = BuildStageProgressionSummaryLine(summary);
+        }
+        else
+        {
+            _restartButton.GetComponentInChildren<Text>().text = "重新开始";
+            _restartButton.onClick.AddListener(() => restartAction?.Invoke());
+            _backToMenuButton.gameObject.SetActive(true);
+            _backToMenuButton.onClick.AddListener(() => backToMenuAction?.Invoke());
+
+            _titleText.text = summary.IsTimedChallenge
+                ? summary.ModeName + " · 结算"
+                : (summary.CorrectCount >= summary.TotalTargets ? "分类完成" : "时间到");
+            _summaryText.text = summary.IsTimedChallenge
+                ? $"模式 {summary.ModeName}    正确 {summary.CorrectCount}    错误 {summary.WrongCount}    总处理 {summary.TotalProcessedCount}"
+                : $"正确 {summary.CorrectCount}/{summary.TotalTargets}    错误 {summary.WrongCount}";
+        }
+
         _accuracyText.text = FormatPercent(summary.Accuracy);
         _timeText.text = FormatTime(summary.ElapsedSeconds) + " / " + FormatTime(summary.TimeLimitSeconds);
         _scoreText.text = summary.Score.ToString();
         _impactText.text = BuildImpactMessage(summary);
 
-        RebuildMistakeList(summary.Records);
+        RebuildMistakeList(summary);
     }
 
-    private void RebuildMistakeList(IReadOnlyList<ClassificationRecord> records)
+    private void RebuildMistakeList(WasteSessionSummary summary)
+    {
+        RebuildMistakeList(summary.Records, summary);
+    }
+
+    private void RebuildMistakeList(IReadOnlyList<ClassificationRecord> records, WasteSessionSummary summary)
     {
         for (int i = _mistakeContent.childCount - 1; i >= 0; i--)
         {
@@ -194,7 +223,7 @@ public sealed class WasteResultView
             LayoutElement rowLayout = rowPanel.gameObject.AddComponent<LayoutElement>();
             rowLayout.preferredHeight = 78f;
 
-            Text rowText = WasteUiFactory.CreateText("RowText", rowPanel.transform, FormatMistake(record), 18, FontStyle.Normal, TextAnchor.MiddleLeft, new Color(0.96f, 0.96f, 0.96f, 1f));
+            Text rowText = WasteUiFactory.CreateText("RowText", rowPanel.transform, FormatMistake(record, summary), 18, FontStyle.Normal, TextAnchor.MiddleLeft, new Color(0.96f, 0.96f, 0.96f, 1f));
             SetRect(rowText.rectTransform, Vector2.zero, Vector2.one, new Vector2(16f, 10f), new Vector2(-16f, -10f));
         }
 
@@ -227,10 +256,33 @@ public sealed class WasteResultView
         rect.offsetMax = offsetMax;
     }
 
-    private static string FormatMistake(ClassificationRecord record)
+    private static string FormatMistake(ClassificationRecord record, WasteSessionSummary summary)
     {
         string reason = string.IsNullOrWhiteSpace(record.Reason) ? "未提供原因" : record.Reason;
-        return $"{record.ItemName} 误投到 {record.SelectedBinName}\n正确应为 {WasteCategoryText.Format(record.CorrectCategory)}，原因：{reason}";
+        string stagePrefix = string.Empty;
+        if (summary.IsStageProgression && record.StageIndex >= 0)
+        {
+            string stageName = string.IsNullOrWhiteSpace(record.StageName) ? ("第 " + (record.StageIndex + 1) + " 关") : record.StageName;
+            stagePrefix = "[" + stageName + "] ";
+        }
+
+        return stagePrefix + record.ItemName + " 误投到 " + record.SelectedBinName + "\n正确应为 "
+            + WasteCategoryText.Format(record.CorrectCategory) + "，原因：" + reason;
+    }
+
+    private static string BuildStageProgressionSummaryLine(WasteSessionSummary summary)
+    {
+        string modeName = string.IsNullOrWhiteSpace(summary.ModeName) ? "标准闯关" : summary.ModeName;
+        string difficulty = string.IsNullOrWhiteSpace(summary.SelectedDifficultyName)
+            ? "未选择"
+            : summary.SelectedDifficultyName;
+        string progressText = summary.AllStagesCleared
+            ? "已通关 " + summary.ClearedStageCount + " 关"
+            : (summary.FailedStageIndex >= 0
+                ? "止步第 " + (summary.FailedStageIndex + 1) + " 关"
+                : "挑战未达成");
+
+        return modeName + "    目标难度 " + difficulty + "    " + progressText + "    正确 " + summary.CorrectCount + "    错误 " + summary.WrongCount;
     }
 
     private static string BuildImpactMessage(WasteSessionSummary summary)

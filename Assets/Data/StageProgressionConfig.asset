@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0809c594fd7acd547aa92d21d5faa66c, type: 3}
+  m_Name: StageProgressionConfig
+  m_EditorClassIdentifier: 
+  modeDisplayName: "\u6807\u51C6\u95EF\u5173"
+  scorePerCorrect: 100
+  penaltyPerWrong: 25
+  spawnPointGroupId: stage
+  contentCatalog: {fileID: 11400000, guid: eaf02a808a012b94eae13f542c9db106, type: 2}
+  stages:
+  - stageId: difficulty_easy
+    stageName: "\u96BE\u5EA6\uFF1A\u7B80\u5355"
+    targetCount: 5
+    timeLimitSeconds: 120
+    initialSpawnCount: 5
+    spawnDistribution: 0
+    availableGarbageItemIds:
+    - garbage_plastic_bottle
+    - garbage_cardboard_box
+    - garbage_leftover_rice
+    - garbage_fruit_peel
+    nextStagePreview: "\u7B80\u5355\u96BE\u5EA6\u4EE5\u5E38\u89C1\u56DB\u7C7B\u5783\u573E\u4E3A\u4E3B\uFF0C\u9002\u5408\u521D\u5B66\u8005\u3002"
+  - stageId: difficulty_medium
+    stageName: "\u96BE\u5EA6\uFF1A\u4E2D\u7B49"
+    targetCount: 5
+    timeLimitSeconds: 180
+    initialSpawnCount: 5
+    spawnDistribution: 1
+    availableGarbageItemIds:
+    - garbage_plastic_bottle
+    - garbage_cardboard_box
+    - garbage_aluminum_can
+    - garbage_leftover_rice
+    - garbage_fruit_peel
+    - garbage_battery
+    - garbage_dirty_tissue
+    nextStagePreview: "\u4E2D\u7B49\u96BE\u5EA6\u52A0\u5165\u66F4\u591A\u7C7B\u522B\uFF0C\u76EE\u6807\u4E0E\u65F6\u95F4\u538B\u529B\u66F4\u5927\u3002"
+  - stageId: difficulty_hard
+    stageName: "\u96BE\u5EA6\uFF1A\u56F0\u96BE"
+    targetCount: 5
+    timeLimitSeconds: 240
+    initialSpawnCount: 5
+    spawnDistribution: 2
+    availableGarbageItemIds:
+    - garbage_dirty_tissue
+    - garbage_milk_tea_cup
+    - garbage_oily_takeout_box
+    - garbage_battery
+    - garbage_expired_medicine
+    - garbage_vegetable_leaf
+    - garbage_aluminum_can
+    nextStagePreview: "\u56F0\u96BE\u96BE\u5EA6\u542B\u6613\u6DF7\u6DC6\u5783\u573E\uFF0C\u65F6\u95F4\u66F4\u7D27\u3002"
+  stageTransitionSeconds: 2.5

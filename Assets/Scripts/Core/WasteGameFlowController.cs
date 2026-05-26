@@ -36,6 +36,7 @@ public sealed class WasteGameFlowController
         WasteAnalyticsTracker analytics,
         System.Action restartAction,
         System.Action timedChallengeAction = null,
+        System.Action stageProgressionAction = null,
         System.Action endlessScoreAction = null)
     {
         _startView = startView;
@@ -81,11 +82,40 @@ public sealed class WasteGameFlowController
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        _startView.Show(BeginSession, timedChallengeAction, endlessScoreAction);
+        _startView.Show(BeginSession, timedChallengeAction, stageProgressionAction, endlessScoreAction);
         _hud.SetVisible(false);
         _hud.HideFeedback();
         _resultView.Hide();
         RefreshHud();
+    }
+
+    public void ShowStartMenu(
+        WasteStartView startView,
+        System.Action timedChallengeAction = null,
+        System.Action stageProgressionAction = null,
+        System.Action endlessScoreAction = null)
+    {
+        if (startView == null)
+        {
+            return;
+        }
+
+        _startView = startView;
+        _isReadyToStart = true;
+        _hasActiveSession = false;
+        _isFinished = false;
+        SetPlayerInputEnabled(false);
+        _startView.Show(BeginSession, timedChallengeAction, stageProgressionAction, endlessScoreAction);
+        if (_hud != null)
+        {
+            _hud.SetVisible(false);
+            _hud.HideFeedback();
+        }
+
+        if (_resultView != null)
+        {
+            _resultView.Hide();
+        }
     }
 
     public void BeginSession()
