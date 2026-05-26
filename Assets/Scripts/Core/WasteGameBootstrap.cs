@@ -11,6 +11,7 @@ public sealed class WasteGameBootstrap : MonoBehaviour
     private WasteHudView _hudView;
     private WasteResultView _resultView;
     private TimedChallengeModeController _timedChallengeController;
+    private EndlessScoreModeController _endlessScoreController;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
@@ -43,9 +44,9 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
         _analytics = new WasteAnalyticsTracker();
         _flowController = new WasteGameFlowController();
-        _startView = WasteStartView.Create(RestartActiveScene, null);
+        _startView = WasteStartView.Create(RestartActiveScene, null, null);
         _hudView = WasteHudView.Create();
-        _resultView = WasteResultView.Create(RestartActiveScene);
+        _resultView = WasteResultView.Create(RestartActiveScene, ReturnToMainMenu);
         WasteUiFactory.EnsureEventSystem();
     }
 
@@ -68,9 +69,25 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if ((_timedChallengeController != null && _timedChallengeController.IsSessionActive)
+                || (_endlessScoreController != null && _endlessScoreController.IsSessionActive))
+            {
+                ReturnToMainMenu();
+                return;
+            }
+        }
+
         if (_timedChallengeController != null && _timedChallengeController.IsSessionActive)
         {
             _timedChallengeController.Tick(Time.deltaTime);
+            return;
+        }
+
+        if (_endlessScoreController != null && _endlessScoreController.IsSessionActive)
+        {
+            _endlessScoreController.Tick(Time.deltaTime);
             return;
         }
 
@@ -93,6 +110,12 @@ public sealed class WasteGameBootstrap : MonoBehaviour
             return;
         }
 
+        if (_endlessScoreController != null && _endlessScoreController.IsSessionActive)
+        {
+            _endlessScoreController.HandleClassification(result);
+            return;
+        }
+
         if (_flowController != null)
         {
             _flowController.HandleClassification(result);
@@ -108,6 +131,7 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
         WasteUiFactory.EnsureEventSystem();
         _timedChallengeController = Object.FindObjectOfType<TimedChallengeModeController>();
+        _endlessScoreController = Object.FindObjectOfType<EndlessScoreModeController>();
 
         System.Action timedChallengeAction = null;
         if (_timedChallengeController != null)
@@ -116,7 +140,20 @@ public sealed class WasteGameBootstrap : MonoBehaviour
             timedChallengeAction = BeginTimedChallengeSession;
         }
 
-        _flowController.BindScene(_startView, _hudView, _resultView, _analytics, RestartActiveScene, timedChallengeAction);
+        System.Action endlessScoreAction = null;
+        if (_endlessScoreController == null)
+        {
+            GameObject controllerObject = new GameObject("EndlessScoreModeController");
+            _endlessScoreController = controllerObject.AddComponent<EndlessScoreModeController>();
+        }
+
+        if (_endlessScoreController != null)
+        {
+            _endlessScoreController.Configure(_hudView, _resultView, _analytics, RestartActiveScene);
+            endlessScoreAction = BeginEndlessScoreSession;
+        }
+
+        _flowController.BindScene(_startView, _hudView, _resultView, _analytics, RestartActiveScene, timedChallengeAction, endlessScoreAction);
     }
 
     private void BeginTimedChallengeSession()
@@ -131,6 +168,18 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         _timedChallengeController.StartChallenge();
     }
 
+    private void BeginEndlessScoreSession()
+    {
+        if (_endlessScoreController == null)
+        {
+            return;
+        }
+
+        _startView.Hide();
+        _resultView.Hide();
+        _endlessScoreController.StartEndless();
+    }
+
     private void RestartActiveScene()
     {
         Scene activeScene = SceneManager.GetActiveScene();
@@ -138,5 +187,10 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         {
             SceneManager.LoadScene(activeScene.buildIndex);
         }
+    }
+
+    private void ReturnToMainMenu()
+    {
+        RestartActiveScene();
     }
 }

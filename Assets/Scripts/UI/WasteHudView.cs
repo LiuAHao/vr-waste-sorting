@@ -74,6 +74,13 @@ public sealed class WasteHudView
         _progressText.text = "已处理 " + processedCount;
     }
 
+    public void SetEndlessScoreStats(string timeText, int score, int processedCount, float accuracy, string stageText, int combo)
+    {
+        _timerText.text = "时间 " + timeText;
+        _scoreText.text = "得分 " + score + "  正确率 " + FormatPercent(accuracy);
+        _progressText.text = "处理 " + processedCount + "  连击 " + combo + "\n" + stageText;
+    }
+
     public void SetStats(float remainingSeconds, int score, int completed, int total)
     {
         _timerText.text = "时间 " + FormatTime(remainingSeconds);
@@ -125,5 +132,10 @@ public sealed class WasteHudView
         int minutes = wholeSeconds / 60;
         int remainder = wholeSeconds % 60;
         return minutes.ToString("00") + ":" + remainder.ToString("00");
+    }
+
+    private static string FormatPercent(float ratio)
+    {
+        return (ratio * 100f).ToString("0.0") + "%";
     }
 }
