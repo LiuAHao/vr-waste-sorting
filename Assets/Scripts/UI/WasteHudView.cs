@@ -74,6 +74,18 @@ public sealed class WasteHudView
         _progressText.text = "已处理 " + processedCount;
     }
 
+    public void SetStageProgressionStats(
+        string stageLabel,
+        float remainingSeconds,
+        int score,
+        int stageCorrectCount,
+        int stageTargetCount)
+    {
+        _timerText.text = "时间 " + FormatTime(remainingSeconds);
+        _scoreText.text = "得分 " + score;
+        _progressText.text = stageLabel + "  " + stageCorrectCount + "/" + stageTargetCount;
+    }
+
     public void SetStats(float remainingSeconds, int score, int completed, int total)
     {
         _timerText.text = "时间 " + FormatTime(remainingSeconds);

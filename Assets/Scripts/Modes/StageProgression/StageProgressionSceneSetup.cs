@@ -1,29 +1,31 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public sealed class TimedChallengeSceneSetup : MonoBehaviour
+public sealed class StageProgressionSceneSetup : MonoBehaviour
 {
-    [SerializeField] private TimedChallengeConfig config;
+    [SerializeField] private StageProgressionConfig config;
     [SerializeField] private int spawnPointCount = 12;
-    [SerializeField] private Vector3 spawnAreaCenter = new Vector3(80f, 0.6f, 48f);
-    [SerializeField] private float spawnRadius = 20f;
+    [SerializeField] private Vector3 mapBoundsCenter = new Vector3(56f, 0.6f, 35f);
+    [SerializeField] private Vector2 mapFullHalfExtents = new Vector2(40f, 40f);
+    [SerializeField] private float spawnPointRadius = 8f;
 
     private void Awake()
     {
-        TimedChallengeModeController controller = GetComponent<TimedChallengeModeController>();
+        StageProgressionModeController controller = GetComponent<StageProgressionModeController>();
         if (controller == null)
         {
-            controller = gameObject.AddComponent<TimedChallengeModeController>();
+            controller = gameObject.AddComponent<StageProgressionModeController>();
         }
 
-        TimedChallengeSpawner spawner = GetComponent<TimedChallengeSpawner>();
+        StageGarbageSpawner spawner = GetComponent<StageGarbageSpawner>();
         if (spawner == null)
         {
-            spawner = gameObject.AddComponent<TimedChallengeSpawner>();
+            spawner = gameObject.AddComponent<StageGarbageSpawner>();
         }
 
         controller.Configure(config, spawner);
         spawner.Configure(config);
+        spawner.SetMapBounds(mapBoundsCenter, mapFullHalfExtents);
         EnsureSpawnPoints();
     }
 
@@ -35,26 +37,26 @@ public sealed class TimedChallengeSceneSetup : MonoBehaviour
             return;
         }
 
-        Transform spawnRoot = transform.Find("TimedChallengeSpawnPoints");
+        Transform spawnRoot = transform.Find("StageProgressionSpawnPoints");
         if (spawnRoot == null)
         {
-            GameObject spawnRootObject = new GameObject("TimedChallengeSpawnPoints");
+            GameObject spawnRootObject = new GameObject("StageProgressionSpawnPoints");
             spawnRoot = spawnRootObject.transform;
             spawnRoot.SetParent(transform, false);
         }
 
+        string groupId = config != null ? config.SpawnPointGroupId : "stage";
         int missingCount = spawnPointCount - existingPoints.Length;
         for (int i = 0; i < missingCount; i++)
         {
             int index = existingPoints.Length + i;
             float angle = (Mathf.PI * 2f / spawnPointCount) * index;
-            Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * spawnRadius;
+            Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * spawnPointRadius;
 
             GameObject pointObject = new GameObject("SpawnPoint_" + (index + 1));
             pointObject.transform.SetParent(spawnRoot, false);
-            pointObject.transform.position = spawnAreaCenter + offset;
+            pointObject.transform.position = mapBoundsCenter + offset;
             TimedChallengeSpawnPoint point = pointObject.AddComponent<TimedChallengeSpawnPoint>();
-            string groupId = config != null ? config.SpawnPointGroupId : "default";
             point.SetGroupId(groupId);
         }
     }
