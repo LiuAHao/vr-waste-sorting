@@ -5,12 +5,17 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 {
     private static WasteGameBootstrap _instance;
 
+    public static WasteGameBootstrap Instance => _instance;
+
     private WasteGameFlowController _flowController;
     private WasteAnalyticsTracker _analytics;
     private WasteStartView _startView;
     private WasteHudView _hudView;
     private WasteResultView _resultView;
+    private StageTransitionView _transitionView;
+    private StageDifficultySelectView _difficultySelectView;
     private TimedChallengeModeController _timedChallengeController;
+    private StageProgressionModeController _stageProgressionController;
     private EndlessScoreModeController _endlessScoreController;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -44,9 +49,11 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
         _analytics = new WasteAnalyticsTracker();
         _flowController = new WasteGameFlowController();
-        _startView = WasteStartView.Create(RestartActiveScene, null, null);
+        _startView = WasteStartView.Create(RestartActiveScene, null, null, null);
         _hudView = WasteHudView.Create();
         _resultView = WasteResultView.Create(RestartActiveScene, ReturnToMainMenu);
+        _transitionView = StageTransitionView.Create();
+        _difficultySelectView = StageDifficultySelectView.Create();
         WasteUiFactory.EnsureEventSystem();
     }
 
@@ -69,8 +76,20 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
     private void Update()
     {
+        if (_stageProgressionController != null && _stageProgressionController.IsSessionActive)
+        {
+            _stageProgressionController.Tick(Time.deltaTime);
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
+            if (_stageProgressionController != null && _stageProgressionController.IsSessionActive)
+            {
+                ReturnToStartMenu();
+                return;
+            }
+
             if ((_timedChallengeController != null && _timedChallengeController.IsSessionActive)
                 || (_endlessScoreController != null && _endlessScoreController.IsSessionActive))
             {
@@ -99,11 +118,18 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
     private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        LegacySceneGarbageUtility.ResetSuppressionFlag();
         BindCurrentScene();
     }
 
     private void HandleClassified(ClassificationResult result)
     {
+        if (_stageProgressionController != null && _stageProgressionController.IsSessionActive)
+        {
+            _stageProgressionController.HandleClassification(result);
+            return;
+        }
+
         if (_timedChallengeController != null && _timedChallengeController.IsSessionActive)
         {
             _timedChallengeController.HandleClassification(result);
@@ -130,7 +156,9 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         }
 
         WasteUiFactory.EnsureEventSystem();
+        LegacySceneGarbageUtility.SuppressLegacyGarbage();
         _timedChallengeController = Object.FindObjectOfType<TimedChallengeModeController>();
+        _stageProgressionController = Object.FindObjectOfType<StageProgressionModeController>();
         _endlessScoreController = Object.FindObjectOfType<EndlessScoreModeController>();
 
         System.Action timedChallengeAction = null;
@@ -138,6 +166,13 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         {
             _timedChallengeController.Configure(_hudView, _resultView, _analytics, RestartActiveScene);
             timedChallengeAction = BeginTimedChallengeSession;
+        }
+
+        System.Action stageProgressionAction = null;
+        if (_stageProgressionController != null)
+        {
+            _stageProgressionController.Configure(_hudView, _resultView, _transitionView, _analytics, ReturnToStartMenu);
+            stageProgressionAction = BeginStageProgressionSession;
         }
 
         System.Action endlessScoreAction = null;
@@ -153,7 +188,15 @@ public sealed class WasteGameBootstrap : MonoBehaviour
             endlessScoreAction = BeginEndlessScoreSession;
         }
 
-        _flowController.BindScene(_startView, _hudView, _resultView, _analytics, RestartActiveScene, timedChallengeAction, endlessScoreAction);
+        _flowController.BindScene(
+            _startView,
+            _hudView,
+            _resultView,
+            _analytics,
+            RestartActiveScene,
+            timedChallengeAction,
+            stageProgressionAction,
+            endlessScoreAction);
     }
 
     private void BeginTimedChallengeSession()
@@ -165,7 +208,46 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
         _startView.Hide();
         _resultView.Hide();
+        _transitionView.Hide();
+        if (_difficultySelectView != null)
+        {
+            _difficultySelectView.Hide();
+        }
+
         _timedChallengeController.StartChallenge();
+    }
+
+    private void BeginStageProgressionSession()
+    {
+        if (_stageProgressionController == null || _difficultySelectView == null)
+        {
+            return;
+        }
+
+        StageProgressionConfig config = _stageProgressionController.Config;
+        if (config == null || _stageProgressionController.StageCount <= 0)
+        {
+            Debug.LogWarning("WasteGameBootstrap: 未找到标准闯关难度配置。");
+            return;
+        }
+
+        _startView.Hide();
+        _resultView.Hide();
+        _transitionView.Hide();
+        _difficultySelectView.Show(config, BeginStageProgressionAtDifficulty, ReturnToStartMenu);
+    }
+
+    private void BeginStageProgressionAtDifficulty(int stageIndex)
+    {
+        if (_stageProgressionController == null)
+        {
+            return;
+        }
+
+        _difficultySelectView.Hide();
+        _resultView.Hide();
+        _transitionView.Hide();
+        _stageProgressionController.StartProgression(stageIndex);
     }
 
     private void BeginEndlessScoreSession()
@@ -177,7 +259,45 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
         _startView.Hide();
         _resultView.Hide();
+        _transitionView.Hide();
+        if (_difficultySelectView != null)
+        {
+            _difficultySelectView.Hide();
+        }
+
         _endlessScoreController.StartEndless();
+    }
+
+    public void ReturnToStartMenu()
+    {
+        if (_stageProgressionController != null)
+        {
+            _stageProgressionController.AbortSession();
+        }
+
+        if (_difficultySelectView != null)
+        {
+            _difficultySelectView.Hide();
+        }
+
+        _resultView.Hide();
+        _transitionView.Hide();
+        _hudView.SetVisible(false);
+        _hudView.HideFeedback();
+
+        System.Action timedChallengeAction = _timedChallengeController != null
+            ? (System.Action)BeginTimedChallengeSession
+            : null;
+        System.Action stageProgressionAction = _stageProgressionController != null
+            ? (System.Action)BeginStageProgressionSession
+            : null;
+        System.Action endlessScoreAction = _endlessScoreController != null
+            ? (System.Action)BeginEndlessScoreSession
+            : null;
+
+        _flowController.ShowStartMenu(_startView, timedChallengeAction, stageProgressionAction, endlessScoreAction);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     private void RestartActiveScene()
