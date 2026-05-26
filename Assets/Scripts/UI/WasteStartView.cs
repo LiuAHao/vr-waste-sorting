@@ -6,12 +6,14 @@ public sealed class WasteStartView
     private readonly GameObject _root;
     private readonly Button _startButton;
     private readonly Button _timedChallengeButton;
+    private readonly Button _endlessScoreButton;
 
-    private WasteStartView(GameObject root, Button startButton, Button timedChallengeButton)
+    private WasteStartView(GameObject root, Button startButton, Button timedChallengeButton, Button endlessScoreButton)
     {
         _root = root;
         _startButton = startButton;
         _timedChallengeButton = timedChallengeButton;
+        _endlessScoreButton = endlessScoreButton;
     }
 
     public static WasteStartView Create(System.Action startAction)
@@ -20,6 +22,11 @@ public sealed class WasteStartView
     }
 
     public static WasteStartView Create(System.Action startAction, System.Action timedChallengeAction)
+    {
+        return Create(startAction, timedChallengeAction, null);
+    }
+
+    public static WasteStartView Create(System.Action startAction, System.Action timedChallengeAction, System.Action endlessScoreAction)
     {
         GameObject root = WasteUiFactory.CreateCanvasRoot("WasteStart");
 
@@ -72,8 +79,8 @@ public sealed class WasteStartView
         RectTransform startButtonRect = startButton.GetComponent<RectTransform>();
         startButtonRect.anchorMin = new Vector2(0.5f, 0f);
         startButtonRect.anchorMax = new Vector2(0.5f, 0f);
-        startButtonRect.sizeDelta = new Vector2(300f, 72f);
-        startButtonRect.anchoredPosition = new Vector2(-170f, 48f);
+        startButtonRect.sizeDelta = new Vector2(250f, 72f);
+        startButtonRect.anchoredPosition = new Vector2(-280f, 48f);
 
         Button timedChallengeButton = WasteUiFactory.CreateButton(
             "TimedChallengeButton",
@@ -85,12 +92,26 @@ public sealed class WasteStartView
         RectTransform timedButtonRect = timedChallengeButton.GetComponent<RectTransform>();
         timedButtonRect.anchorMin = new Vector2(0.5f, 0f);
         timedButtonRect.anchorMax = new Vector2(0.5f, 0f);
-        timedButtonRect.sizeDelta = new Vector2(300f, 72f);
-        timedButtonRect.anchoredPosition = new Vector2(170f, 48f);
+        timedButtonRect.sizeDelta = new Vector2(250f, 72f);
+        timedButtonRect.anchoredPosition = new Vector2(0f, 48f);
         timedChallengeButton.gameObject.SetActive(timedChallengeAction != null);
 
+        Button endlessScoreButton = WasteUiFactory.CreateButton(
+            "EndlessScoreButton",
+            panelRect,
+            "无尽刷分",
+            new Color(0.92f, 0.49f, 0.16f, 1f),
+            Color.white,
+            endlessScoreAction);
+        RectTransform endlessButtonRect = endlessScoreButton.GetComponent<RectTransform>();
+        endlessButtonRect.anchorMin = new Vector2(0.5f, 0f);
+        endlessButtonRect.anchorMax = new Vector2(0.5f, 0f);
+        endlessButtonRect.sizeDelta = new Vector2(250f, 72f);
+        endlessButtonRect.anchoredPosition = new Vector2(280f, 48f);
+        endlessScoreButton.gameObject.SetActive(endlessScoreAction != null);
+
         root.SetActive(false);
-        return new WasteStartView(root, startButton, timedChallengeButton);
+        return new WasteStartView(root, startButton, timedChallengeButton, endlessScoreButton);
     }
 
     public void Show(System.Action startAction)
@@ -100,12 +121,18 @@ public sealed class WasteStartView
 
     public void Show(System.Action startAction, System.Action timedChallengeAction)
     {
+        Show(startAction, timedChallengeAction, null);
+    }
+
+    public void Show(System.Action startAction, System.Action timedChallengeAction, System.Action endlessScoreAction)
+    {
         _root.SetActive(true);
         _startButton.onClick.RemoveAllListeners();
         _startButton.onClick.AddListener(() => startAction?.Invoke());
 
         RectTransform startButtonRect = _startButton.GetComponent<RectTransform>();
-        startButtonRect.anchoredPosition = new Vector2(timedChallengeAction != null ? -170f : 0f, 48f);
+        bool hasExtraMode = timedChallengeAction != null || endlessScoreAction != null;
+        startButtonRect.anchoredPosition = new Vector2(hasExtraMode ? -280f : 0f, 48f);
 
         if (_timedChallengeButton != null)
         {
@@ -114,6 +141,16 @@ public sealed class WasteStartView
             if (timedChallengeAction != null)
             {
                 _timedChallengeButton.onClick.AddListener(() => timedChallengeAction.Invoke());
+            }
+        }
+
+        if (_endlessScoreButton != null)
+        {
+            _endlessScoreButton.gameObject.SetActive(endlessScoreAction != null);
+            _endlessScoreButton.onClick.RemoveAllListeners();
+            if (endlessScoreAction != null)
+            {
+                _endlessScoreButton.onClick.AddListener(() => endlessScoreAction.Invoke());
             }
         }
     }

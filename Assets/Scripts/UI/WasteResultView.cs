@@ -138,7 +138,7 @@ public sealed class WasteResultView
         _restartButton.onClick.AddListener(() => restartAction?.Invoke());
 
         _titleText.text = summary.IsTimedChallenge
-            ? "限时挑战 · 时间到"
+            ? summary.ModeName + " · 结算"
             : (summary.CorrectCount >= summary.TotalTargets ? "分类完成" : "时间到");
         _summaryText.text = summary.IsTimedChallenge
             ? $"模式 {summary.ModeName}    正确 {summary.CorrectCount}    错误 {summary.WrongCount}    总处理 {summary.TotalProcessedCount}"

@@ -35,7 +35,8 @@ public sealed class WasteGameFlowController
         WasteResultView resultView,
         WasteAnalyticsTracker analytics,
         System.Action restartAction,
-        System.Action timedChallengeAction = null)
+        System.Action timedChallengeAction = null,
+        System.Action endlessScoreAction = null)
     {
         _startView = startView;
         _hud = hud;
@@ -80,7 +81,7 @@ public sealed class WasteGameFlowController
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        _startView.Show(BeginSession, timedChallengeAction);
+        _startView.Show(BeginSession, timedChallengeAction, endlessScoreAction);
         _hud.SetVisible(false);
         _hud.HideFeedback();
         _resultView.Hide();
