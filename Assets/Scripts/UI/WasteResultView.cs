@@ -13,6 +13,7 @@ public sealed class WasteResultView
     private readonly Text _impactText;
     private readonly Transform _mistakeContent;
     private readonly Button _restartButton;
+    private readonly Button _backToMenuButton;
 
     private WasteResultView(
         GameObject root,
@@ -23,7 +24,8 @@ public sealed class WasteResultView
         Text scoreText,
         Text impactText,
         Transform mistakeContent,
-        Button restartButton)
+        Button restartButton,
+        Button backToMenuButton)
     {
         _root = root;
         _titleText = titleText;
@@ -34,9 +36,15 @@ public sealed class WasteResultView
         _impactText = impactText;
         _mistakeContent = mistakeContent;
         _restartButton = restartButton;
+        _backToMenuButton = backToMenuButton;
     }
 
     public static WasteResultView Create(System.Action restartAction)
+    {
+        return Create(restartAction, restartAction);
+    }
+
+    public static WasteResultView Create(System.Action restartAction, System.Action backToMenuAction)
     {
         GameObject root = WasteUiFactory.CreateCanvasRoot("WasteResult");
 
@@ -120,10 +128,17 @@ public sealed class WasteResultView
         restartRect.anchorMin = new Vector2(0.5f, 0f);
         restartRect.anchorMax = new Vector2(0.5f, 0f);
         restartRect.sizeDelta = new Vector2(260f, 58f);
-        restartRect.anchoredPosition = new Vector2(0f, 34f);
+        restartRect.anchoredPosition = new Vector2(-150f, 34f);
+
+        Button backToMenuButton = WasteUiFactory.CreateButton("BackToMenuButton", panel.transform, "返回主页面", new Color(0.27f, 0.31f, 0.37f, 1f), Color.white, backToMenuAction);
+        RectTransform backRect = backToMenuButton.GetComponent<RectTransform>();
+        backRect.anchorMin = new Vector2(0.5f, 0f);
+        backRect.anchorMax = new Vector2(0.5f, 0f);
+        backRect.sizeDelta = new Vector2(260f, 58f);
+        backRect.anchoredPosition = new Vector2(150f, 34f);
 
         root.SetActive(false);
-        return new WasteResultView(root, titleText, summaryText, accuracyText, timeText, scoreText, impactText, contentRect, restartButton);
+        return new WasteResultView(root, titleText, summaryText, accuracyText, timeText, scoreText, impactText, contentRect, restartButton, backToMenuButton);
     }
 
     public void Hide()
@@ -133,9 +148,16 @@ public sealed class WasteResultView
 
     public void Show(WasteSessionSummary summary, System.Action restartAction)
     {
+        Show(summary, restartAction, restartAction);
+    }
+
+    public void Show(WasteSessionSummary summary, System.Action restartAction, System.Action backToMenuAction)
+    {
         _root.SetActive(true);
         _restartButton.onClick.RemoveAllListeners();
         _restartButton.onClick.AddListener(() => restartAction?.Invoke());
+        _backToMenuButton.onClick.RemoveAllListeners();
+        _backToMenuButton.onClick.AddListener(() => backToMenuAction?.Invoke());
 
         _titleText.text = summary.IsTimedChallenge
             ? summary.ModeName + " · 结算"

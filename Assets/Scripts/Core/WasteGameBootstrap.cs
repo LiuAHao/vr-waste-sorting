@@ -46,7 +46,7 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         _flowController = new WasteGameFlowController();
         _startView = WasteStartView.Create(RestartActiveScene, null, null);
         _hudView = WasteHudView.Create();
-        _resultView = WasteResultView.Create(RestartActiveScene);
+        _resultView = WasteResultView.Create(RestartActiveScene, ReturnToMainMenu);
         WasteUiFactory.EnsureEventSystem();
     }
 
@@ -69,6 +69,16 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if ((_timedChallengeController != null && _timedChallengeController.IsSessionActive)
+                || (_endlessScoreController != null && _endlessScoreController.IsSessionActive))
+            {
+                ReturnToMainMenu();
+                return;
+            }
+        }
+
         if (_timedChallengeController != null && _timedChallengeController.IsSessionActive)
         {
             _timedChallengeController.Tick(Time.deltaTime);
@@ -177,5 +187,10 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         {
             SceneManager.LoadScene(activeScene.buildIndex);
         }
+    }
+
+    private void ReturnToMainMenu()
+    {
+        RestartActiveScene();
     }
 }

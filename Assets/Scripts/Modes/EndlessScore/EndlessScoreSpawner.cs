@@ -4,6 +4,12 @@ using UnityEngine;
 
 public sealed class EndlessScoreSpawner : MonoBehaviour
 {
+    private struct SpawnPointRecord
+    {
+        public Vector3 position;
+        public Quaternion rotation;
+    }
+
     private static readonly FieldInfo ItemIdField = typeof(GarbageItem).GetField("itemId", BindingFlags.Instance | BindingFlags.NonPublic);
     private static readonly FieldInfo ItemNameField = typeof(GarbageItem).GetField("itemName", BindingFlags.Instance | BindingFlags.NonPublic);
     private static readonly FieldInfo CategoryField = typeof(GarbageItem).GetField("category", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -15,13 +21,21 @@ public sealed class EndlessScoreSpawner : MonoBehaviour
 
     private readonly List<GarbageItem> _templates = new List<GarbageItem>();
     private readonly List<GarbageItem> _activeItems = new List<GarbageItem>();
-    private readonly List<Transform> _spawnPoints = new List<Transform>();
+    private readonly List<SpawnPointRecord> _spawnPoints = new List<SpawnPointRecord>();
+    private readonly Dictionary<GarbageItem, bool> _templateActiveStates = new Dictionary<GarbageItem, bool>();
+    private readonly Dictionary<GarbageItem, int> _spawnPointIndexByItem = new Dictionary<GarbageItem, int>();
 
     public IReadOnlyList<GarbageItem> ActiveItems => _activeItems;
 
     public void Initialize(EndlessDifficultyStage stage)
     {
+        RestoreScene();
         CaptureSceneItems();
+        if (_templates.Count <= 0)
+        {
+            return;
+        }
+
         HideSceneTemplates();
         EnsureActiveCount(stage);
     }
@@ -31,6 +45,7 @@ public sealed class EndlessScoreSpawner : MonoBehaviour
         if (item != null)
         {
             _activeItems.Remove(item);
+            _spawnPointIndexByItem.Remove(item);
             Destroy(item.gameObject);
         }
 
@@ -44,11 +59,36 @@ public sealed class EndlessScoreSpawner : MonoBehaviour
         EnsureActiveCount(stage);
     }
 
+    public void RestoreScene()
+    {
+        for (int i = _activeItems.Count - 1; i >= 0; i--)
+        {
+            GarbageItem activeItem = _activeItems[i];
+            if (activeItem != null)
+            {
+                Destroy(activeItem.gameObject);
+            }
+        }
+
+        _activeItems.Clear();
+        _spawnPointIndexByItem.Clear();
+
+        foreach (KeyValuePair<GarbageItem, bool> pair in _templateActiveStates)
+        {
+            if (pair.Key != null)
+            {
+                pair.Key.gameObject.SetActive(pair.Value);
+            }
+        }
+    }
+
     private void CaptureSceneItems()
     {
         _templates.Clear();
         _activeItems.Clear();
         _spawnPoints.Clear();
+        _templateActiveStates.Clear();
+        _spawnPointIndexByItem.Clear();
 
         GarbageItem[] items = FindObjectsOfType<GarbageItem>(true);
         for (int i = 0; i < items.Length; i++)
@@ -60,10 +100,12 @@ public sealed class EndlessScoreSpawner : MonoBehaviour
             }
 
             _templates.Add(item);
-
-            GameObject spawnPoint = new GameObject("EndlessSpawnPoint_" + item.ItemId);
-            spawnPoint.transform.SetPositionAndRotation(item.transform.position, item.transform.rotation);
-            _spawnPoints.Add(spawnPoint.transform);
+            _templateActiveStates[item] = item.gameObject.activeSelf;
+            _spawnPoints.Add(new SpawnPointRecord
+            {
+                position = item.transform.position,
+                rotation = item.transform.rotation
+            });
         }
     }
 
@@ -122,21 +164,58 @@ public sealed class EndlessScoreSpawner : MonoBehaviour
 
     private GarbageItem SpawnFromTemplate(GarbageItem template)
     {
-        Transform spawnPoint = PickSpawnPoint();
-        Vector3 position = spawnPoint != null ? spawnPoint.position : template.transform.position;
-        Quaternion rotation = spawnPoint != null ? spawnPoint.rotation : template.transform.rotation;
+        int spawnPointIndex = PickSpawnPointIndex();
+        Vector3 position = template.transform.position;
+        Quaternion rotation = template.transform.rotation;
+        if (spawnPointIndex >= 0 && spawnPointIndex < _spawnPoints.Count)
+        {
+            SpawnPointRecord spawnPoint = _spawnPoints[spawnPointIndex];
+            position = spawnPoint.position;
+            rotation = spawnPoint.rotation;
+        }
+
         GarbageItem spawned = Instantiate(template, position, rotation);
         spawned.name = template.ItemId + "_EndlessSpawn";
         spawned.gameObject.SetActive(true);
         CopySerializedGarbageData(template, spawned);
         ResetGarbageRuntimeState(spawned, position, rotation);
         EnsureInteractablePhysics(spawned);
+        _spawnPointIndexByItem[spawned] = spawnPointIndex;
         return spawned;
     }
 
-    private Transform PickSpawnPoint()
+    private int PickSpawnPointIndex()
     {
-        return _spawnPoints.Count > 0 ? _spawnPoints[Random.Range(0, _spawnPoints.Count)] : null;
+        if (_spawnPoints.Count <= 0)
+        {
+            return -1;
+        }
+
+        List<int> availableIndices = new List<int>();
+        for (int i = 0; i < _spawnPoints.Count; i++)
+        {
+            bool isOccupied = false;
+            foreach (KeyValuePair<GarbageItem, int> pair in _spawnPointIndexByItem)
+            {
+                if (pair.Key != null && pair.Value == i)
+                {
+                    isOccupied = true;
+                    break;
+                }
+            }
+
+            if (!isOccupied)
+            {
+                availableIndices.Add(i);
+            }
+        }
+
+        if (availableIndices.Count <= 0)
+        {
+            return -1;
+        }
+
+        return availableIndices[Random.Range(0, availableIndices.Count)];
     }
 
     private void CullCompletedItems()
@@ -146,6 +225,7 @@ public sealed class EndlessScoreSpawner : MonoBehaviour
             GarbageItem item = _activeItems[i];
             if (item == null || item.IsCompleted)
             {
+                _spawnPointIndexByItem.Remove(item);
                 _activeItems.RemoveAt(i);
             }
         }

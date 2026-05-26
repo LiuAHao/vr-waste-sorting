@@ -99,7 +99,7 @@ public sealed class WasteStartView
         Button endlessScoreButton = WasteUiFactory.CreateButton(
             "EndlessScoreButton",
             panelRect,
-            "无尽刷分",
+            "生存刷分",
             new Color(0.92f, 0.49f, 0.16f, 1f),
             Color.white,
             endlessScoreAction);

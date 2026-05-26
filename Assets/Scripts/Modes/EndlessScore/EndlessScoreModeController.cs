@@ -5,17 +5,14 @@ using UnityEngine;
 public sealed class EndlessScoreModeController : MonoBehaviour
 {
     private const float FeedbackDurationSeconds = 1.4f;
-    private const float StageOneTimeLimitSeconds = 60f;
-    private const float StageTwoTimeLimitSeconds = 120f;
-    private const int StageOneRequiredCorrect = 2;
-    private const int StageTwoRequiredCorrect = 5;
-    private const int StageThreeWrongLimit = 5;
-    private const int ScorePerCorrect = 100;
-    private const int PenaltyPerWrong = 25;
 
     private readonly List<Player> _players = new List<Player>();
-    private readonly List<EndlessDifficultyStage> _stages = new List<EndlessDifficultyStage>();
     private readonly Dictionary<string, int> _mistakesByItemName = new Dictionary<string, int>();
+
+    [SerializeField] private float totalTimeLimitSeconds = 180f;
+    [SerializeField] private int scorePerCorrect = 100;
+    [SerializeField] private int penaltyPerWrong = 25;
+    [SerializeField] private List<EndlessDifficultyStage> stages = new List<EndlessDifficultyStage>();
 
     private EndlessScoreSpawner _spawner;
     private WasteHudView _hud;
@@ -24,15 +21,12 @@ public sealed class EndlessScoreModeController : MonoBehaviour
     private Action _restartAction;
 
     private float _totalElapsedSeconds;
-    private float _stageRemainingSeconds;
     private float _feedbackRemainingSeconds;
     private int _currentStageIndex;
     private int _highestStageIndex;
     private int _score;
     private int _correctCount;
     private int _wrongCount;
-    private int _stageCorrectCount;
-    private int _stageWrongCount;
     private int _currentCombo;
     private int _highestCombo;
     private bool _isSessionActive;
@@ -70,7 +64,8 @@ public sealed class EndlessScoreModeController : MonoBehaviour
 
         if (_spawner.ActiveItems.Count <= 0)
         {
-            Debug.LogWarning("EndlessScoreModeController: 未检测到可用于无尽刷分的垃圾物品。");
+            Debug.LogWarning("EndlessScoreModeController: 未检测到可用于生存刷分的垃圾物品。");
+            _spawner.RestoreScene();
             return;
         }
 
@@ -92,9 +87,10 @@ public sealed class EndlessScoreModeController : MonoBehaviour
         }
 
         _totalElapsedSeconds += deltaTime;
-        if (CurrentStageHasTimeLimit)
+        int targetStageIndex = ResolveStageIndexForElapsed(_totalElapsedSeconds);
+        if (targetStageIndex != _currentStageIndex)
         {
-            _stageRemainingSeconds -= deltaTime;
+            AdvanceStage(targetStageIndex);
         }
 
         if (_feedbackRemainingSeconds > 0f)
@@ -106,9 +102,8 @@ public sealed class EndlessScoreModeController : MonoBehaviour
             }
         }
 
-        if (CurrentStageHasTimeLimit && _stageRemainingSeconds <= 0f)
+        if (RemainingSeconds <= 0f)
         {
-            _stageRemainingSeconds = 0f;
             EndSession();
             return;
         }
@@ -128,18 +123,16 @@ public sealed class EndlessScoreModeController : MonoBehaviour
         if (result.IsCorrect)
         {
             _correctCount++;
-            _stageCorrectCount++;
             _currentCombo++;
             _highestCombo = Mathf.Max(_highestCombo, _currentCombo);
-            _score += ScorePerCorrect;
+            _score += scorePerCorrect;
             ShowFeedback(true, "投放正确", BuildCorrectDetail(result));
         }
         else
         {
             _wrongCount++;
-            _stageWrongCount++;
             _currentCombo = 0;
-            _score -= PenaltyPerWrong;
+            _score -= penaltyPerWrong;
             TrackMistake(result);
             ShowFeedback(false, "投放错误", BuildWrongDetail(result));
             if (result.Item != null)
@@ -153,7 +146,6 @@ public sealed class EndlessScoreModeController : MonoBehaviour
             _spawner.HandleItemProcessed(result.Item, CurrentStage);
         }
 
-        ApplyStageRules();
         RefreshHud();
     }
 
@@ -170,6 +162,7 @@ public sealed class EndlessScoreModeController : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         _hud.HideFeedback();
+        _spawner.RestoreScene();
 
         WasteSessionSummary summary = _analytics.BuildSummary(
             _correctCount + _wrongCount,
@@ -177,9 +170,9 @@ public sealed class EndlessScoreModeController : MonoBehaviour
             _wrongCount,
             _score,
             _totalElapsedSeconds,
-            CurrentStageHasTimeLimit ? ResolveCurrentStageTimeLimit() : _totalElapsedSeconds,
+            totalTimeLimitSeconds,
             isTimedChallenge: true,
-            modeName: "无尽刷分",
+            modeName: "生存刷分",
             mostMistakenItemName: MostMistakenItemName,
             mostMistakenItemCount: MostMistakenItemCount,
             totalProcessedCount: _correctCount + _wrongCount,
@@ -188,8 +181,8 @@ public sealed class EndlessScoreModeController : MonoBehaviour
         _resultView.Show(summary, _restartAction);
     }
 
-    private EndlessDifficultyStage CurrentStage => _stages[Mathf.Clamp(_currentStageIndex, 0, _stages.Count - 1)];
-    private bool CurrentStageHasTimeLimit => _currentStageIndex < 2;
+    private EndlessDifficultyStage CurrentStage => stages[Mathf.Clamp(_currentStageIndex, 0, stages.Count - 1)];
+    private float RemainingSeconds => Mathf.Max(0f, totalTimeLimitSeconds - _totalElapsedSeconds);
 
     private string CurrentStageName
     {
@@ -204,8 +197,8 @@ public sealed class EndlessScoreModeController : MonoBehaviour
     {
         get
         {
-            int index = Mathf.Clamp(_highestStageIndex, 0, _stages.Count - 1);
-            EndlessDifficultyStage stage = _stages[index];
+            int index = Mathf.Clamp(_highestStageIndex, 0, stages.Count - 1);
+            EndlessDifficultyStage stage = stages[index];
             return stage != null && !string.IsNullOrWhiteSpace(stage.stageName) ? stage.stageName : "阶段 " + (index + 1);
         }
     }
@@ -243,34 +236,11 @@ public sealed class EndlessScoreModeController : MonoBehaviour
         }
     }
 
-    private void ApplyStageRules()
+    private void AdvanceStage(int targetStageIndex)
     {
-        if (_currentStageIndex == 0 && _stageCorrectCount >= StageOneRequiredCorrect)
-        {
-            AdvanceStage();
-            return;
-        }
-
-        if (_currentStageIndex == 1 && _stageCorrectCount >= StageTwoRequiredCorrect)
-        {
-            AdvanceStage();
-            return;
-        }
-
-        if (_currentStageIndex >= 2 && _stageWrongCount >= StageThreeWrongLimit)
-        {
-            EndSession();
-        }
-    }
-
-    private void AdvanceStage()
-    {
-        _currentStageIndex = Mathf.Min(_currentStageIndex + 1, _stages.Count - 1);
+        _currentStageIndex = Mathf.Clamp(targetStageIndex, 0, stages.Count - 1);
         _highestStageIndex = Mathf.Max(_highestStageIndex, _currentStageIndex);
-        _stageCorrectCount = 0;
-        _stageWrongCount = 0;
-        _stageRemainingSeconds = ResolveCurrentStageTimeLimit();
-        ShowFeedback(true, "阶段提升", BuildStageHudName());
+        ShowFeedback(true, "阶段提升", CurrentStageName);
         _spawner.RefreshForStage(CurrentStage);
     }
 
@@ -279,52 +249,19 @@ public sealed class EndlessScoreModeController : MonoBehaviour
         _totalElapsedSeconds = 0f;
         _currentStageIndex = 0;
         _highestStageIndex = 0;
-        _stageRemainingSeconds = ResolveCurrentStageTimeLimit();
         _feedbackRemainingSeconds = 0f;
         _score = 0;
         _correctCount = 0;
         _wrongCount = 0;
-        _stageCorrectCount = 0;
-        _stageWrongCount = 0;
         _currentCombo = 0;
         _highestCombo = 0;
         _mistakesByItemName.Clear();
         _isFinished = false;
     }
 
-    private float ResolveCurrentStageTimeLimit()
-    {
-        if (_currentStageIndex == 0)
-        {
-            return StageOneTimeLimitSeconds;
-        }
-
-        if (_currentStageIndex == 1)
-        {
-            return StageTwoTimeLimitSeconds;
-        }
-
-        return 0f;
-    }
-
     private string BuildStageHudName()
     {
-        if (_currentStageIndex == 0)
-        {
-            return CurrentStageName + "  正确 " + _stageCorrectCount + "/" + StageOneRequiredCorrect;
-        }
-
-        if (_currentStageIndex == 1)
-        {
-            return CurrentStageName + "  正确 " + _stageCorrectCount + "/" + StageTwoRequiredCorrect;
-        }
-
-        return CurrentStageName + "  错误 " + _stageWrongCount + "/" + StageThreeWrongLimit;
-    }
-
-    private string FormatStageTime()
-    {
-        return CurrentStageHasTimeLimit ? FormatTime(_stageRemainingSeconds) : "不限时";
+        return CurrentStageName;
     }
 
     private string BuildSummaryText()
@@ -359,7 +296,7 @@ public sealed class EndlessScoreModeController : MonoBehaviour
     {
         int processedCount = _correctCount + _wrongCount;
         float accuracy = processedCount <= 0 ? 0f : (float)_correctCount / processedCount;
-        _hud.SetEndlessScoreStats(FormatStageTime(), _score, processedCount, accuracy, BuildStageHudName(), _currentCombo);
+        _hud.SetEndlessScoreStats(FormatTime(RemainingSeconds), _score, processedCount, accuracy, BuildStageHudName(), _currentCombo);
     }
 
     private void CachePlayers()
@@ -382,57 +319,76 @@ public sealed class EndlessScoreModeController : MonoBehaviour
 
     private void EnsureStages()
     {
-        if (_stages.Count > 0)
+        if (stages.Count <= 0)
         {
-            return;
+            stages = new List<EndlessDifficultyStage>
+            {
+                new EndlessDifficultyStage
+                {
+                    startSecond = 0f,
+                    stageName = "阶段 1：基础垃圾",
+                    activeGarbageCount = 6,
+                    availableGarbageItemIds = new List<string>
+                    {
+                        "garbage_plastic_bottle",
+                        "garbage_cardboard_box",
+                        "garbage_leftover_rice",
+                        "garbage_fruit_peel"
+                    }
+                },
+                new EndlessDifficultyStage
+                {
+                    startSecond = 60f,
+                    stageName = "阶段 2：混合垃圾",
+                    activeGarbageCount = 7,
+                    availableGarbageItemIds = new List<string>
+                    {
+                        "garbage_plastic_bottle",
+                        "garbage_cardboard_box",
+                        "garbage_aluminum_can",
+                        "garbage_leftover_rice",
+                        "garbage_fruit_peel",
+                        "garbage_vegetable_leaf",
+                        "garbage_dirty_tissue",
+                        "garbage_milk_tea_cup"
+                    }
+                },
+                new EndlessDifficultyStage
+                {
+                    startSecond = 120f,
+                    stageName = "阶段 3：易混淆挑战",
+                    activeGarbageCount = 8,
+                    availableGarbageItemIds = new List<string>
+                    {
+                        "garbage_plastic_bottle",
+                        "garbage_milk_tea_cup",
+                        "garbage_oily_takeout_box",
+                        "garbage_dirty_tissue",
+                        "garbage_battery",
+                        "garbage_expired_medicine",
+                        "garbage_lamp_tube",
+                        "garbage_aluminum_can"
+                    }
+                }
+            };
         }
 
-        _stages.Add(new EndlessDifficultyStage
-        {
-            stageName = "阶段 1：基础垃圾",
-            activeGarbageCount = 6,
-            availableGarbageItemIds = new List<string>
-            {
-                "garbage_plastic_bottle",
-                "garbage_cardboard_box",
-                "garbage_leftover_rice",
-                "garbage_fruit_peel"
-            }
-        });
+        stages.Sort((left, right) => left.startSecond.CompareTo(right.startSecond));
+    }
 
-        _stages.Add(new EndlessDifficultyStage
+    private int ResolveStageIndexForElapsed(float elapsedSeconds)
+    {
+        int stageIndex = 0;
+        for (int i = 0; i < stages.Count; i++)
         {
-            stageName = "阶段 2：混合垃圾",
-            activeGarbageCount = 7,
-            availableGarbageItemIds = new List<string>
+            EndlessDifficultyStage stage = stages[i];
+            if (stage != null && elapsedSeconds >= stage.startSecond)
             {
-                "garbage_plastic_bottle",
-                "garbage_cardboard_box",
-                "garbage_aluminum_can",
-                "garbage_leftover_rice",
-                "garbage_fruit_peel",
-                "garbage_vegetable_leaf",
-                "garbage_dirty_tissue",
-                "garbage_milk_tea_cup"
+                stageIndex = i;
             }
-        });
+        }
 
-        _stages.Add(new EndlessDifficultyStage
-        {
-            stageName = "阶段 3：易混淆挑战",
-            activeGarbageCount = 8,
-            availableGarbageItemIds = new List<string>
-            {
-                "garbage_plastic_bottle",
-                "garbage_milk_tea_cup",
-                "garbage_oily_takeout_box",
-                "garbage_dirty_tissue",
-                "garbage_battery",
-                "garbage_expired_medicine",
-                "garbage_lamp_tube",
-                "garbage_aluminum_can"
-            }
-        });
+        return stageIndex;
     }
 
     private static string BuildCorrectDetail(ClassificationResult result)
