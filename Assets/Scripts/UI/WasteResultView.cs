@@ -282,7 +282,7 @@ public sealed class WasteResultView
                 ? "止步第 " + (summary.FailedStageIndex + 1) + " 关"
                 : "挑战未达成");
 
-        return modeName + "    目标难度 " + difficulty + "    " + progressText + "    正确 " + summary.CorrectCount + "    错误 " + summary.WrongCount;
+        return modeName + "    挑战关卡 " + difficulty + "    " + progressText + "    正确 " + summary.CorrectCount + "    错误 " + summary.WrongCount;
     }
 
     private static string BuildImpactMessage(WasteSessionSummary summary)

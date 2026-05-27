@@ -44,7 +44,7 @@ public sealed class StageDifficultySelectView
         Text titleText = WasteUiFactory.CreateText(
             "Title",
             panelRect,
-            "选择目标难度",
+            "选择挑战关卡",
             46,
             FontStyle.Bold,
             TextAnchor.UpperCenter,
@@ -54,7 +54,7 @@ public sealed class StageDifficultySelectView
         Text hintText = WasteUiFactory.CreateText(
             "Hint",
             panelRect,
-            "将从第 1 关开始，逐关挑战到你选择的目标难度。",
+            "可直接从简单、中等、困难对应关卡开始挑战。",
             22,
             FontStyle.Normal,
             TextAnchor.UpperCenter,
@@ -152,7 +152,7 @@ public sealed class StageDifficultySelectView
         string title = stage != null && !string.IsNullOrWhiteSpace(stage.stageName)
             ? stage.stageName
             : "难度 " + (index + 1);
-        return title + "  ·  挑战至第 " + (index + 1) + " 关";
+        return "第 " + (index + 1) + " 关  ·  " + title;
     }
 
     private static Color GetDifficultyColor(int index)

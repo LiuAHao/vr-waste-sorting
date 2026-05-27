@@ -154,7 +154,7 @@ public sealed class StageProgressionModeController : MonoBehaviour
         Cursor.visible = false;
 
         _selectedDifficultyStageIndex = stageIndex;
-        BeginStage(0);
+        BeginStage(stageIndex);
     }
 
     public void Tick(float deltaTime)
@@ -567,7 +567,7 @@ public sealed class StageProgressionModeController : MonoBehaviour
 
         StageDefinition stage = config.GetStage(_currentStageIndex);
         string stageName = stage != null ? stage.stageName : "标准闯关";
-        string stageLabel = "第 " + (_currentStageIndex + 1) + "/" + (_selectedDifficultyStageIndex + 1) + " 关 · " + stageName;
+        string stageLabel = "第 " + (_currentStageIndex + 1) + " 关 · " + stageName;
 
         _hud.SetStageProgressionStats(
             stageLabel,
