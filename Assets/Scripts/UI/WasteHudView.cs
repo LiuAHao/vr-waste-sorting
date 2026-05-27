@@ -100,6 +100,14 @@ public sealed class WasteHudView
         _progressText.text = "进度 " + completed + "/" + total;
     }
 
+    public void SetFreePlayStats(int score, int processedCount, int correctCount, int wrongCount)
+    {
+        _timerText.text = "自由模式";
+        _scoreText.text = "已处理 " + processedCount;
+        float accuracy = processedCount > 0 ? (float)correctCount / processedCount : 0f;
+        _progressText.text = "正确率 " + FormatPercent(accuracy) + "  正确 " + correctCount + "  错误 " + wrongCount;
+    }
+
     public void ShowFeedback(bool isCorrect, string title, string detail)
     {
         _feedbackPanel.gameObject.SetActive(true);

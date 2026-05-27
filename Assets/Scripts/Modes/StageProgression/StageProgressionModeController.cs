@@ -12,8 +12,10 @@ public sealed class StageProgressionModeController : MonoBehaviour
     private WasteHudView _hud;
     private WasteResultView _resultView;
     private StageTransitionView _transitionView;
+    private WastePauseView _pauseView;
     private WasteAnalyticsTracker _analytics;
     private Action _restartAction;
+    private Action _returnToMenuAction;
 
     private readonly List<Player> _players = new List<Player>();
     private readonly List<GarbageItem> _hiddenSceneItems = new List<GarbageItem>();
@@ -68,6 +70,12 @@ public sealed class StageProgressionModeController : MonoBehaviour
         _restartAction = restartAction;
     }
 
+    public void ConfigurePauseView(WastePauseView pauseView, Action returnToMenuAction)
+    {
+        _pauseView = pauseView;
+        _returnToMenuAction = returnToMenuAction;
+    }
+
     public void AbortSession()
     {
         _isSessionActive = false;
@@ -75,6 +83,7 @@ public sealed class StageProgressionModeController : MonoBehaviour
         _isInTransition = false;
         _transitionRemainingSeconds = 0f;
         _feedbackRemainingSeconds = 0f;
+        Time.timeScale = 1f;
 
         if (spawner != null)
         {
@@ -100,6 +109,7 @@ public sealed class StageProgressionModeController : MonoBehaviour
             _resultView.Hide();
         }
 
+        _pauseView?.Hide();
         SetPlayerInputEnabled(false);
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -126,6 +136,8 @@ public sealed class StageProgressionModeController : MonoBehaviour
             return;
         }
 
+        Time.timeScale = 1f;
+        _pauseView?.Hide();
         if (stageIndex < 0 || stageIndex >= config.StageCount)
         {
             Debug.LogWarning("StageProgressionModeController: 无效的难度索引 " + stageIndex);
@@ -377,6 +389,7 @@ public sealed class StageProgressionModeController : MonoBehaviour
             allStagesCleared: _allStagesCleared,
             selectedDifficultyName: difficultyName);
 
+        _analytics.RecordSessionSummary(new WasteSessionSummary(summary));
         _resultView.Show(summary, ResolveRestartAction());
     }
 
@@ -403,6 +416,7 @@ public sealed class StageProgressionModeController : MonoBehaviour
             allStagesCleared: false,
             selectedDifficultyName: difficultyName);
 
+        _analytics.RecordSessionSummary(new WasteSessionSummary(summary));
         _resultView.Show(summary, ResolveRestartAction());
     }
 
@@ -433,8 +447,30 @@ public sealed class StageProgressionModeController : MonoBehaviour
         Cursor.visible = true;
         _hud?.HideFeedback();
         _transitionView?.Hide();
+        _pauseView?.Hide();
         spawner?.ClearSpawnedItems();
         RestoreSceneGarbage();
+    }
+
+    public void TogglePause()
+    {
+        if (!_isSessionActive || _isFinished || _pauseView == null || _isInTransition)
+        {
+            return;
+        }
+
+        if (Time.timeScale > 0f)
+        {
+            Time.timeScale = 0f;
+            SetPlayerInputEnabled(false);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            _pauseView.Show(ResumeFromPause, EndPauseToMenu);
+        }
+        else
+        {
+            ResumeFromPause();
+        }
     }
 
     private void OnDestroy()
@@ -575,6 +611,22 @@ public sealed class StageProgressionModeController : MonoBehaviour
             _totalScore,
             _stageCorrectCount,
             _stageTargetCount);
+    }
+
+    private void ResumeFromPause()
+    {
+        Time.timeScale = 1f;
+        _pauseView?.Hide();
+        SetPlayerInputEnabled(true);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    private void EndPauseToMenu()
+    {
+        Time.timeScale = 1f;
+        _pauseView?.Hide();
+        _returnToMenuAction?.Invoke();
     }
 
     private void SetPlayerInputEnabled(bool enabled)

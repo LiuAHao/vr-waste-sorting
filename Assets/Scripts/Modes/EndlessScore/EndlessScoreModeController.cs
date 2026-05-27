@@ -17,8 +17,10 @@ public sealed class EndlessScoreModeController : MonoBehaviour
     private EndlessScoreSpawner _spawner;
     private WasteHudView _hud;
     private WasteResultView _resultView;
+    private WastePauseView _pauseView;
     private WasteAnalyticsTracker _analytics;
     private Action _restartAction;
+    private Action _returnToMenuAction;
 
     private float _totalElapsedSeconds;
     private float _feedbackRemainingSeconds;
@@ -50,6 +52,12 @@ public sealed class EndlessScoreModeController : MonoBehaviour
         EnsureStages();
     }
 
+    public void ConfigurePauseView(WastePauseView pauseView, Action returnToMenuAction)
+    {
+        _pauseView = pauseView;
+        _returnToMenuAction = returnToMenuAction;
+    }
+
     public void StartEndless()
     {
         if (_isSessionActive || _isFinished || _hud == null || _resultView == null || _analytics == null)
@@ -57,6 +65,8 @@ public sealed class EndlessScoreModeController : MonoBehaviour
             return;
         }
 
+        Time.timeScale = 1f;
+        _pauseView?.Hide();
         CachePlayers();
         ResetSessionState();
         _analytics.BeginSession();
@@ -77,6 +87,20 @@ public sealed class EndlessScoreModeController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         RefreshHud();
+    }
+
+    public void AbortSession()
+    {
+        _isSessionActive = false;
+        _isFinished = false;
+        _feedbackRemainingSeconds = 0f;
+        Time.timeScale = 1f;
+        _pauseView?.Hide();
+        SetPlayerInputEnabled(false);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        _hud?.HideFeedback();
+        _spawner?.RestoreScene();
     }
 
     public void Tick(float deltaTime)
@@ -162,6 +186,7 @@ public sealed class EndlessScoreModeController : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         _hud.HideFeedback();
+        _pauseView?.Hide();
         _spawner.RestoreScene();
 
         WasteSessionSummary summary = _analytics.BuildSummary(
@@ -178,7 +203,29 @@ public sealed class EndlessScoreModeController : MonoBehaviour
             totalProcessedCount: _correctCount + _wrongCount,
             mistakeSummaryText: BuildSummaryText());
 
+        _analytics.RecordSessionSummary(new WasteSessionSummary(summary));
         _resultView.Show(summary, _restartAction);
+    }
+
+    public void TogglePause()
+    {
+        if (!_isSessionActive || _isFinished || _pauseView == null)
+        {
+            return;
+        }
+
+        if (Time.timeScale > 0f)
+        {
+            Time.timeScale = 0f;
+            SetPlayerInputEnabled(false);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            _pauseView.Show(ResumeFromPause, EndPauseToMenu);
+        }
+        else
+        {
+            ResumeFromPause();
+        }
     }
 
     private EndlessDifficultyStage CurrentStage => stages[Mathf.Clamp(_currentStageIndex, 0, stages.Count - 1)];
@@ -297,6 +344,22 @@ public sealed class EndlessScoreModeController : MonoBehaviour
         int processedCount = _correctCount + _wrongCount;
         float accuracy = processedCount <= 0 ? 0f : (float)_correctCount / processedCount;
         _hud.SetEndlessScoreStats(FormatTime(RemainingSeconds), _score, processedCount, accuracy, BuildStageHudName(), _currentCombo);
+    }
+
+    private void ResumeFromPause()
+    {
+        Time.timeScale = 1f;
+        _pauseView?.Hide();
+        SetPlayerInputEnabled(true);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    private void EndPauseToMenu()
+    {
+        Time.timeScale = 1f;
+        _pauseView?.Hide();
+        _returnToMenuAction?.Invoke();
     }
 
     private void CachePlayers()

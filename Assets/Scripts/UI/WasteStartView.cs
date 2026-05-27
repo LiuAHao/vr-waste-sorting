@@ -8,19 +8,22 @@ public sealed class WasteStartView
     private readonly Button _startButton;
     private readonly Button _timedChallengeButton;
     private readonly Button _endlessScoreButton;
+    private readonly Button _dashboardButton;
 
     private WasteStartView(
         GameObject root,
         Button stageProgressionButton,
         Button startButton,
         Button timedChallengeButton,
-        Button endlessScoreButton)
+        Button endlessScoreButton,
+        Button dashboardButton)
     {
         _root = root;
         _stageProgressionButton = stageProgressionButton;
         _startButton = startButton;
         _timedChallengeButton = timedChallengeButton;
         _endlessScoreButton = endlessScoreButton;
+        _dashboardButton = dashboardButton;
     }
 
     public static WasteStartView Create(System.Action startAction)
@@ -47,7 +50,7 @@ public sealed class WasteStartView
         RectTransform panelRect = panel.rectTransform;
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(980f, 720f);
+        panelRect.sizeDelta = new Vector2(1160f, 760f);
 
         Text titleText = WasteUiFactory.CreateText("Title", panelRect, "垃圾分类体验", 52, FontStyle.Bold, TextAnchor.UpperCenter, Color.white);
         SetStretch(titleText.rectTransform, new Vector2(48f, -98f), new Vector2(-48f, -24f), new Vector2(0f, 1f), new Vector2(1f, 1f));
@@ -88,14 +91,14 @@ public sealed class WasteStartView
             new Color(0.92f, 0.96f, 0.92f, 1f));
         SetStretch(controlsText.rectTransform, new Vector2(30f, -26f), new Vector2(-30f, -20f), new Vector2(0f, 1f), new Vector2(1f, 1f));
 
-        Button stageProgressionButton = WasteUiFactory.CreateButton(
-            "StageProgressionButton",
+        Button dashboardButton = WasteUiFactory.CreateButton(
+            "DashboardButton",
             panelRect,
-            "标准闯关",
-            new Color(0.15f, 0.57f, 0.36f, 1f),
+            "数据看板",
+            new Color(0.33f, 0.38f, 0.44f, 1f),
             Color.white,
-            stageProgressionAction);
-        LayoutButton(stageProgressionButton, new Vector2(-420f, 48f), stageProgressionAction != null);
+            null);
+        LayoutButton(dashboardButton, new Vector2(0f, 120f), true);
 
         Button startButton = WasteUiFactory.CreateButton(
             "StartButton",
@@ -104,7 +107,16 @@ public sealed class WasteStartView
             new Color(0.2f, 0.52f, 0.62f, 1f),
             Color.white,
             startAction);
-        LayoutButton(startButton, new Vector2(-140f, 48f), true);
+        LayoutButton(startButton, new Vector2(-420f, 48f), true);
+
+        Button stageProgressionButton = WasteUiFactory.CreateButton(
+            "StageProgressionButton",
+            panelRect,
+            "标准闯关",
+            new Color(0.15f, 0.57f, 0.36f, 1f),
+            Color.white,
+            stageProgressionAction);
+        LayoutButton(stageProgressionButton, new Vector2(-140f, 48f), stageProgressionAction != null);
 
         Button timedChallengeButton = WasteUiFactory.CreateButton(
             "TimedChallengeButton",
@@ -125,7 +137,7 @@ public sealed class WasteStartView
         LayoutButton(endlessScoreButton, new Vector2(420f, 48f), endlessScoreAction != null);
 
         root.SetActive(false);
-        return new WasteStartView(root, stageProgressionButton, startButton, timedChallengeButton, endlessScoreButton);
+        return new WasteStartView(root, stageProgressionButton, startButton, timedChallengeButton, endlessScoreButton, dashboardButton);
     }
 
     public void Show(System.Action startAction)
@@ -137,7 +149,8 @@ public sealed class WasteStartView
         System.Action startAction,
         System.Action timedChallengeAction,
         System.Action stageProgressionAction,
-        System.Action endlessScoreAction)
+        System.Action endlessScoreAction,
+        System.Action dashboardAction = null)
     {
         _root.SetActive(true);
 
@@ -145,13 +158,16 @@ public sealed class WasteStartView
         BindButton(_timedChallengeButton, timedChallengeAction);
         BindButton(_stageProgressionButton, stageProgressionAction);
         BindButton(_endlessScoreButton, endlessScoreAction);
+        BindButton(_dashboardButton, dashboardAction);
 
         bool hasStage = stageProgressionAction != null;
         bool hasTimed = timedChallengeAction != null;
         bool hasEndless = endlessScoreAction != null;
+        bool hasDashboard = dashboardAction != null;
 
-        LayoutButton(_stageProgressionButton, new Vector2(-420f, 48f), hasStage);
-        LayoutButton(_startButton, new Vector2(hasStage ? -140f : -280f, 48f), true);
+        LayoutButton(_dashboardButton, new Vector2(0f, 132f), hasDashboard);
+        LayoutButton(_startButton, new Vector2(-420f, 48f), true);
+        LayoutButton(_stageProgressionButton, new Vector2(hasStage ? -140f : -280f, 48f), hasStage);
         LayoutButton(_timedChallengeButton, new Vector2(hasEndless ? 140f : 280f, 48f), hasTimed);
         LayoutButton(_endlessScoreButton, new Vector2(420f, 48f), hasEndless);
     }

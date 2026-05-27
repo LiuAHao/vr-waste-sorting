@@ -113,6 +113,78 @@ public sealed class StageGarbageSpawner : MonoBehaviour
         return spawnedCount;
     }
 
+    public int SpawnSingleFullMapRandom()
+    {
+        ClearSpawnedItems();
+        CacheScenePrototypes();
+        BuildResolvedItemPool(null);
+
+        if (_resolvedItemIds.Count <= 0)
+        {
+            Debug.LogWarning("StageGarbageSpawner: 自由模式没有可生成的垃圾。");
+            return 0;
+        }
+
+        _activeDistribution = StageSpawnDistribution.FullMapRandom;
+
+        Vector3 playerOrigin = ResolveSpawnOrigin();
+        Vector3 playerForward = ResolvePlayerForward();
+        _sessionPlayerSpawnOrigin = playerOrigin;
+        _mapBoundsResolved = false;
+        ResolveMapBounds();
+        CacheBinExclusionCenters();
+
+        List<Vector3> placedPositions = new List<Vector3>(1);
+        string itemId = PickRandomItemId();
+        if (!TryFindSpawnPosition(playerOrigin, playerForward, placedPositions, out Vector3 position))
+        {
+            return 0;
+        }
+
+        Quaternion rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+        return TrySpawnAt(itemId, position, rotation) ? 1 : 0;
+    }
+
+    public int SpawnSingleFullMapRandomFromScene()
+    {
+        CacheScenePrototypes();
+        BuildResolvedItemPoolFromScene();
+
+        if (_resolvedItemIds.Count <= 0)
+        {
+            Debug.LogWarning("StageGarbageSpawner: 自由模式没有可生成的场景垃圾。");
+            return 0;
+        }
+
+        _activeDistribution = StageSpawnDistribution.FullMapRandom;
+
+        Vector3 playerOrigin = ResolveSpawnOrigin();
+        Vector3 playerForward = ResolvePlayerForward();
+        _sessionPlayerSpawnOrigin = playerOrigin;
+        _mapBoundsResolved = false;
+        ResolveMapBounds();
+        CacheBinExclusionCenters();
+
+        List<Vector3> placedPositions = new List<Vector3>(_activeItems.Count + 1);
+        for (int i = 0; i < _activeItems.Count; i++)
+        {
+            GarbageItem activeItem = _activeItems[i];
+            if (activeItem != null)
+            {
+                placedPositions.Add(activeItem.transform.position);
+            }
+        }
+
+        string itemId = PickRandomItemId();
+        if (!TryFindSpawnPosition(playerOrigin, playerForward, placedPositions, out Vector3 position))
+        {
+            return 0;
+        }
+
+        Quaternion rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+        return TrySpawnAt(itemId, position, rotation) ? 1 : 0;
+    }
+
     private int ResolveTotalSpawnAttemptBudget(int desiredCount)
     {
         int perItemAttempts = _activeDistribution == StageSpawnDistribution.NearPlayer
@@ -730,12 +802,12 @@ public sealed class StageGarbageSpawner : MonoBehaviour
     {
         _resolvedItemIds.Clear();
 
-        if (config == null || stage == null)
+        if (config == null)
         {
             return;
         }
 
-        if (stage.availableGarbageItemIds != null && stage.availableGarbageItemIds.Count > 0)
+        if (stage != null && stage.availableGarbageItemIds != null && stage.availableGarbageItemIds.Count > 0)
         {
             for (int i = 0; i < stage.availableGarbageItemIds.Count; i++)
             {
@@ -771,7 +843,7 @@ public sealed class StageGarbageSpawner : MonoBehaviour
                 continue;
             }
 
-            if (!config.IsItemAllowed(stage, definition.itemId))
+            if (stage != null && !config.IsItemAllowed(stage, definition.itemId))
             {
                 continue;
             }
@@ -779,6 +851,24 @@ public sealed class StageGarbageSpawner : MonoBehaviour
             if (CanSpawnItem(definition.itemId))
             {
                 _resolvedItemIds.Add(definition.itemId);
+            }
+        }
+    }
+
+    private void BuildResolvedItemPoolFromScene()
+    {
+        _resolvedItemIds.Clear();
+
+        if (_sceneTemplates.Count <= 0)
+        {
+            CacheScenePrototypes();
+        }
+
+        foreach (KeyValuePair<string, GarbageItem> pair in _sceneTemplates)
+        {
+            if (pair.Value != null && !string.IsNullOrWhiteSpace(pair.Key))
+            {
+                _resolvedItemIds.Add(pair.Key);
             }
         }
     }
@@ -862,6 +952,16 @@ public sealed class StageGarbageSpawner : MonoBehaviour
 
     private void ApplyGarbageMetadata(GameObject instance, string itemId)
     {
+        if (instance == null)
+        {
+            return;
+        }
+
+        if (config == null)
+        {
+            return;
+        }
+
         GarbageItem garbageItem = instance.GetComponent<GarbageItem>();
         if (garbageItem == null)
         {

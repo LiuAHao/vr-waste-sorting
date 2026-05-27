@@ -11,8 +11,10 @@ public sealed class TimedChallengeModeController : MonoBehaviour
 
     private WasteHudView _hud;
     private WasteResultView _resultView;
+    private WastePauseView _pauseView;
     private WasteAnalyticsTracker _analytics;
     private Action _restartAction;
+    private Action _returnToMenuAction;
 
     private readonly List<Player> _players = new List<Player>();
     private readonly List<GarbageItem> _hiddenSceneItems = new List<GarbageItem>();
@@ -54,6 +56,12 @@ public sealed class TimedChallengeModeController : MonoBehaviour
         _restartAction = restartAction;
     }
 
+    public void ConfigurePauseView(WastePauseView pauseView, Action returnToMenuAction)
+    {
+        _pauseView = pauseView;
+        _returnToMenuAction = returnToMenuAction;
+    }
+
     public void StartChallenge()
     {
         if (_isSessionActive || _isFinished || config == null || spawner == null)
@@ -71,6 +79,8 @@ public sealed class TimedChallengeModeController : MonoBehaviour
             return;
         }
 
+        Time.timeScale = 1f;
+        _pauseView?.Hide();
         CachePlayers();
         HideSceneGarbage();
         ResetSessionState();
@@ -86,6 +96,23 @@ public sealed class TimedChallengeModeController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         RefreshHud();
+    }
+
+    public void AbortSession()
+    {
+        _isSessionActive = false;
+        _isFinished = false;
+        _feedbackRemainingSeconds = 0f;
+        SetPlayerInputEnabled(false);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        _hud?.HideFeedback();
+        _pauseView?.Hide();
+        RestoreSceneGarbage();
+        if (spawner != null)
+        {
+            spawner.ClearSpawnedItems();
+        }
     }
 
     public void Tick(float deltaTime)
@@ -163,6 +190,7 @@ public sealed class TimedChallengeModeController : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         _hud.HideFeedback();
+        _pauseView?.Hide();
         RestoreSceneGarbage();
 
         TimedChallengeSessionStats stats = TimedChallengeSessionStats.FromRecords(_analytics.Records);
@@ -180,12 +208,50 @@ public sealed class TimedChallengeModeController : MonoBehaviour
             totalProcessedCount: stats.TotalProcessedCount,
             mistakeSummaryText: stats.BuildMistakeSummaryText());
 
+        _analytics.RecordSessionSummary(new WasteSessionSummary(summary));
         _resultView.Show(summary, _restartAction);
     }
 
     private void OnDestroy()
     {
         RestoreSceneGarbage();
+    }
+
+    public void TogglePause()
+    {
+        if (!_isSessionActive || _isFinished || _pauseView == null)
+        {
+            return;
+        }
+
+        if (Time.timeScale > 0f)
+        {
+            Time.timeScale = 0f;
+            SetPlayerInputEnabled(false);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            _pauseView.Show(ResumeFromPause, EndPauseToMenu);
+        }
+        else
+        {
+            ResumeFromPause();
+        }
+    }
+
+    private void ResumeFromPause()
+    {
+        Time.timeScale = 1f;
+        _pauseView?.Hide();
+        SetPlayerInputEnabled(true);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
+
+    private void EndPauseToMenu()
+    {
+        Time.timeScale = 1f;
+        _pauseView?.Hide();
+        _returnToMenuAction?.Invoke();
     }
 
     private void ResetSessionState()

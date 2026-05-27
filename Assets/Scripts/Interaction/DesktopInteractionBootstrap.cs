@@ -33,7 +33,7 @@ namespace ParkClean.Interaction
                 GameObject holdPointGo = new GameObject("DesktopHoldPoint");
                 holdPoint = holdPointGo.transform;
                 holdPoint.SetParent(cameraRef.transform, false);
-                holdPoint.localPosition = new Vector3(0f, -0.15f, 2.4f);
+                holdPoint.localPosition = new Vector3(0f, -0.1f, 3.1f);
                 holdPoint.localRotation = Quaternion.identity;
             }
 

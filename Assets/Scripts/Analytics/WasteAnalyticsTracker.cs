@@ -3,8 +3,10 @@ using System.Collections.Generic;
 public sealed class WasteAnalyticsTracker
 {
     private readonly List<ClassificationRecord> _records = new List<ClassificationRecord>();
+    private readonly List<WasteSessionSummary> _sessionHistory = new List<WasteSessionSummary>();
 
     public IReadOnlyList<ClassificationRecord> Records => _records;
+    public IReadOnlyList<WasteSessionSummary> SessionHistory => _sessionHistory;
 
     public void BeginSession()
     {
@@ -74,6 +76,21 @@ public sealed class WasteAnalyticsTracker
             failedStageIndex,
             allStagesCleared,
             selectedDifficultyName);
+    }
+
+    public void RecordSessionSummary(WasteSessionSummary summary)
+    {
+        if (summary == null)
+        {
+            return;
+        }
+
+        _sessionHistory.Add(summary);
+    }
+
+    public void ClearSessionHistory()
+    {
+        _sessionHistory.Clear();
     }
 }
 
@@ -145,7 +162,7 @@ public sealed class WasteSessionSummary
         Score = score;
         ElapsedSeconds = elapsedSeconds;
         TimeLimitSeconds = timeLimitSeconds;
-        _records = records;
+        _records = records != null ? new List<ClassificationRecord>(records) : new List<ClassificationRecord>();
         IsTimedChallenge = isTimedChallenge;
         IsStageProgression = isStageProgression;
         ModeName = modeName;
@@ -157,6 +174,40 @@ public sealed class WasteSessionSummary
         FailedStageIndex = failedStageIndex;
         AllStagesCleared = allStagesCleared;
         SelectedDifficultyName = selectedDifficultyName;
+    }
+
+    public WasteSessionSummary(WasteSessionSummary source)
+    {
+        if (source == null)
+        {
+            TotalTargets = 0;
+            CorrectCount = 0;
+            WrongCount = 0;
+            Score = 0;
+            ElapsedSeconds = 0f;
+            TimeLimitSeconds = 0f;
+            _records = new List<ClassificationRecord>();
+            return;
+        }
+
+        TotalTargets = source.TotalTargets;
+        CorrectCount = source.CorrectCount;
+        WrongCount = source.WrongCount;
+        Score = source.Score;
+        ElapsedSeconds = source.ElapsedSeconds;
+        TimeLimitSeconds = source.TimeLimitSeconds;
+        IsTimedChallenge = source.IsTimedChallenge;
+        IsStageProgression = source.IsStageProgression;
+        ModeName = source.ModeName;
+        MostMistakenItemName = source.MostMistakenItemName;
+        MostMistakenItemCount = source.MostMistakenItemCount;
+        TotalProcessedCount = source.TotalProcessedCount;
+        MistakeSummaryText = source.MistakeSummaryText;
+        ClearedStageCount = source.ClearedStageCount;
+        FailedStageIndex = source.FailedStageIndex;
+        AllStagesCleared = source.AllStagesCleared;
+        SelectedDifficultyName = source.SelectedDifficultyName;
+        _records = source.Records != null ? new List<ClassificationRecord>(source.Records) : new List<ClassificationRecord>();
     }
 
     public int TotalTargets { get; }

@@ -17,6 +17,7 @@ public sealed class WasteGameFlowController
     private WasteHudView _hud;
     private WasteResultView _resultView;
     private System.Action _restartAction;
+    private System.Action _startAction;
 
     private float _timeLimitSeconds = DefaultTimeLimitSeconds;
     private float _remainingSeconds;
@@ -35,15 +36,18 @@ public sealed class WasteGameFlowController
         WasteResultView resultView,
         WasteAnalyticsTracker analytics,
         System.Action restartAction,
+        System.Action startAction = null,
         System.Action timedChallengeAction = null,
         System.Action stageProgressionAction = null,
-        System.Action endlessScoreAction = null)
+        System.Action endlessScoreAction = null,
+        System.Action dashboardAction = null)
     {
         _startView = startView;
         _hud = hud;
         _resultView = resultView;
         _analytics = analytics;
         _restartAction = restartAction;
+        _startAction = startAction;
 
         WasteUiFactory.HideLegacySceneUi();
 
@@ -82,7 +86,7 @@ public sealed class WasteGameFlowController
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        _startView.Show(BeginSession, timedChallengeAction, stageProgressionAction, endlessScoreAction);
+        _startView.Show(_startAction ?? BeginSession, timedChallengeAction, stageProgressionAction, endlessScoreAction, dashboardAction);
         _hud.SetVisible(false);
         _hud.HideFeedback();
         _resultView.Hide();
@@ -91,9 +95,11 @@ public sealed class WasteGameFlowController
 
     public void ShowStartMenu(
         WasteStartView startView,
+        System.Action startAction = null,
         System.Action timedChallengeAction = null,
         System.Action stageProgressionAction = null,
-        System.Action endlessScoreAction = null)
+        System.Action endlessScoreAction = null,
+        System.Action dashboardAction = null)
     {
         if (startView == null)
         {
@@ -105,7 +111,7 @@ public sealed class WasteGameFlowController
         _hasActiveSession = false;
         _isFinished = false;
         SetPlayerInputEnabled(false);
-        _startView.Show(BeginSession, timedChallengeAction, stageProgressionAction, endlessScoreAction);
+        _startView.Show(startAction ?? _startAction ?? BeginSession, timedChallengeAction, stageProgressionAction, endlessScoreAction, dashboardAction);
         if (_hud != null)
         {
             _hud.SetVisible(false);

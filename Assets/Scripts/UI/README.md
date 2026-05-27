@@ -6,6 +6,7 @@
 - `WasteStartView`：开始游戏界面，展示目标、规则说明和开始按钮。
 - `WasteHudView`：显示时间、得分、进度和即时投放反馈。
 - `WasteResultView`：显示结算统计、错误记录和重新开始按钮。
+- `WasteDashboardView`：显示本地累计统计、关键洞察和错误条目列表。
 - `WasteUiFactory`：统一创建 Canvas、面板、文本和按钮。
 
 当前逻辑：

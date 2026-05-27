@@ -14,6 +14,9 @@ public sealed class WasteGameBootstrap : MonoBehaviour
     private WasteResultView _resultView;
     private StageTransitionView _transitionView;
     private StageDifficultySelectView _difficultySelectView;
+    private WastePauseView _pauseView;
+    private WasteDashboardView _dashboardView;
+    private FreePlayModeController _freePlayController;
     private TimedChallengeModeController _timedChallengeController;
     private StageProgressionModeController _stageProgressionController;
     private EndlessScoreModeController _endlessScoreController;
@@ -54,6 +57,9 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         _resultView = WasteResultView.Create(RestartActiveScene, ReturnToMainMenu);
         _transitionView = StageTransitionView.Create();
         _difficultySelectView = StageDifficultySelectView.Create();
+        _pauseView = WastePauseView.Create();
+        _dashboardView = WasteDashboardView.Create();
+        _freePlayController = FindObjectOfType<FreePlayModeController>();
         WasteUiFactory.EnsureEventSystem();
     }
 
@@ -76,26 +82,43 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (_freePlayController != null && _freePlayController.IsSessionActive)
+            {
+                _freePlayController.TogglePause();
+                return;
+            }
+
+            if (_stageProgressionController != null && _stageProgressionController.IsSessionActive)
+            {
+                _stageProgressionController.TogglePause();
+                return;
+            }
+
+            if (_timedChallengeController != null && _timedChallengeController.IsSessionActive)
+            {
+                _timedChallengeController.TogglePause();
+                return;
+            }
+
+            if (_endlessScoreController != null && _endlessScoreController.IsSessionActive)
+            {
+                _endlessScoreController.TogglePause();
+                return;
+            }
+        }
+
+        if (_freePlayController != null && _freePlayController.IsSessionActive)
+        {
+            _freePlayController.Tick(Time.deltaTime);
+            return;
+        }
+
         if (_stageProgressionController != null && _stageProgressionController.IsSessionActive)
         {
             _stageProgressionController.Tick(Time.deltaTime);
             return;
-        }
-
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            if (_stageProgressionController != null && _stageProgressionController.IsSessionActive)
-            {
-                ReturnToStartMenu();
-                return;
-            }
-
-            if ((_timedChallengeController != null && _timedChallengeController.IsSessionActive)
-                || (_endlessScoreController != null && _endlessScoreController.IsSessionActive))
-            {
-                ReturnToMainMenu();
-                return;
-            }
         }
 
         if (_timedChallengeController != null && _timedChallengeController.IsSessionActive)
@@ -130,6 +153,12 @@ public sealed class WasteGameBootstrap : MonoBehaviour
             return;
         }
 
+        if (_freePlayController != null && _freePlayController.IsSessionActive)
+        {
+            _freePlayController.HandleClassification(result);
+            return;
+        }
+
         if (_timedChallengeController != null && _timedChallengeController.IsSessionActive)
         {
             _timedChallengeController.HandleClassification(result);
@@ -160,11 +189,15 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         _timedChallengeController = Object.FindObjectOfType<TimedChallengeModeController>();
         _stageProgressionController = Object.FindObjectOfType<StageProgressionModeController>();
         _endlessScoreController = Object.FindObjectOfType<EndlessScoreModeController>();
+        _freePlayController = Object.FindObjectOfType<FreePlayModeController>();
+        EnsureFreePlaySceneSetup();
+        _freePlayController = Object.FindObjectOfType<FreePlayModeController>();
 
         System.Action timedChallengeAction = null;
         if (_timedChallengeController != null)
         {
             _timedChallengeController.Configure(_hudView, _resultView, _analytics, RestartActiveScene);
+            _timedChallengeController.ConfigurePauseView(_pauseView, ReturnToMainMenu);
             timedChallengeAction = BeginTimedChallengeSession;
         }
 
@@ -172,7 +205,16 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         if (_stageProgressionController != null)
         {
             _stageProgressionController.Configure(_hudView, _resultView, _transitionView, _analytics, ReturnToStartMenu);
+            _stageProgressionController.ConfigurePauseView(_pauseView, ReturnToStartMenu);
             stageProgressionAction = BeginStageProgressionSession;
+        }
+
+        System.Action startGameAction = null;
+        if (_freePlayController != null)
+        {
+            _freePlayController.Configure(_hudView, _resultView, _analytics, ReturnToStartMenu);
+            _freePlayController.ConfigurePauseView(_pauseView);
+            startGameAction = BeginFreePlaySession;
         }
 
         System.Action endlessScoreAction = null;
@@ -185,8 +227,11 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         if (_endlessScoreController != null)
         {
             _endlessScoreController.Configure(_hudView, _resultView, _analytics, RestartActiveScene);
+            _endlessScoreController.ConfigurePauseView(_pauseView, ReturnToMainMenu);
             endlessScoreAction = BeginEndlessScoreSession;
         }
+
+        System.Action dashboardAction = ShowDashboard;
 
         _flowController.BindScene(
             _startView,
@@ -194,9 +239,28 @@ public sealed class WasteGameBootstrap : MonoBehaviour
             _resultView,
             _analytics,
             RestartActiveScene,
+            startGameAction,
             timedChallengeAction,
             stageProgressionAction,
-            endlessScoreAction);
+            endlessScoreAction,
+            dashboardAction);
+    }
+
+    private void EnsureFreePlaySceneSetup()
+    {
+        if (_freePlayController != null)
+        {
+            return;
+        }
+
+        FreePlaySceneSetup existingSetup = Object.FindObjectOfType<FreePlaySceneSetup>();
+        if (existingSetup != null)
+        {
+            return;
+        }
+
+        GameObject controllerObject = new GameObject("FreePlaySceneSetup");
+        controllerObject.AddComponent<FreePlaySceneSetup>();
     }
 
     private void BeginTimedChallengeSession()
@@ -215,6 +279,24 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         }
 
         _timedChallengeController.StartChallenge();
+    }
+
+    private void BeginFreePlaySession()
+    {
+        if (_freePlayController == null)
+        {
+            return;
+        }
+
+        _startView.Hide();
+        _resultView.Hide();
+        _transitionView.Hide();
+        if (_difficultySelectView != null)
+        {
+            _difficultySelectView.Hide();
+        }
+
+        _freePlayController.StartFreePlay();
     }
 
     private void BeginStageProgressionSession()
@@ -275,6 +357,21 @@ public sealed class WasteGameBootstrap : MonoBehaviour
             _stageProgressionController.AbortSession();
         }
 
+        if (_freePlayController != null)
+        {
+            _freePlayController.AbortSession();
+        }
+
+        if (_timedChallengeController != null)
+        {
+            _timedChallengeController.AbortSession();
+        }
+
+        if (_endlessScoreController != null)
+        {
+            _endlessScoreController.AbortSession();
+        }
+
         if (_difficultySelectView != null)
         {
             _difficultySelectView.Hide();
@@ -284,9 +381,14 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         _transitionView.Hide();
         _hudView.SetVisible(false);
         _hudView.HideFeedback();
+        _pauseView.Hide();
+        _dashboardView.Hide();
 
         System.Action timedChallengeAction = _timedChallengeController != null
             ? (System.Action)BeginTimedChallengeSession
+            : null;
+        System.Action startGameAction = _freePlayController != null
+            ? (System.Action)BeginFreePlaySession
             : null;
         System.Action stageProgressionAction = _stageProgressionController != null
             ? (System.Action)BeginStageProgressionSession
@@ -294,8 +396,30 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         System.Action endlessScoreAction = _endlessScoreController != null
             ? (System.Action)BeginEndlessScoreSession
             : null;
+        System.Action dashboardAction = ShowDashboard;
 
-        _flowController.ShowStartMenu(_startView, timedChallengeAction, stageProgressionAction, endlessScoreAction);
+        _flowController.ShowStartMenu(_startView, startGameAction, timedChallengeAction, stageProgressionAction, endlessScoreAction, dashboardAction);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    private void ShowDashboard()
+    {
+        if (_dashboardView == null || _analytics == null)
+        {
+            return;
+        }
+
+        _startView.Hide();
+        _hudView.SetVisible(false);
+        _resultView.Hide();
+        _transitionView.Hide();
+        if (_difficultySelectView != null)
+        {
+            _difficultySelectView.Hide();
+        }
+
+        _dashboardView.Show(_analytics.SessionHistory, ReturnToStartMenu);
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
@@ -311,6 +435,26 @@ public sealed class WasteGameBootstrap : MonoBehaviour
 
     private void ReturnToMainMenu()
     {
+        if (_freePlayController != null)
+        {
+            _freePlayController.AbortSession();
+        }
+
+        if (_timedChallengeController != null)
+        {
+            _timedChallengeController.AbortSession();
+        }
+
+        if (_stageProgressionController != null)
+        {
+            _stageProgressionController.AbortSession();
+        }
+
+        if (_endlessScoreController != null)
+        {
+            _endlessScoreController.AbortSession();
+        }
+
         RestartActiveScene();
     }
 }

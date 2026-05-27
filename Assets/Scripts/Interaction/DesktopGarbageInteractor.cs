@@ -9,7 +9,7 @@ namespace ParkClean.Interaction
         [SerializeField] private float interactDistance = 4f;
         [SerializeField] private LayerMask interactMask = Physics.DefaultRaycastLayers;
         [SerializeField] private Transform holdPoint;
-        [SerializeField] private float followSpeed = 15f;
+        [SerializeField] private float followSpeed = 18f;
 
         private GarbageItem _currentHover;
         private SelectableHighlighter _currentHighlighter;
