@@ -58,13 +58,55 @@ public static class WasteUiFactory
         EventSystem current = EventSystem.current;
         if (current != null)
         {
+            // VR 模式下：如果场景里已有 EventSystem，确保它有 XRUIInputModule
+            if (IsXRActive())
+            {
+                EnsureXRUIInputModule(current.gameObject);
+            }
             return current.gameObject;
         }
 
         GameObject eventSystem = new GameObject("EventSystem");
         eventSystem.AddComponent<EventSystem>();
-        eventSystem.AddComponent<StandaloneInputModule>();
+
+        if (IsXRActive())
+        {
+            // VR 模式：用 XRUIInputModule 处理手柄射线点击 UI
+            EnsureXRUIInputModule(eventSystem);
+        }
+        else
+        {
+            // 桌面模式：保持原有 StandaloneInputModule
+            eventSystem.AddComponent<StandaloneInputModule>();
+        }
+
         return eventSystem;
+    }
+
+    private static void EnsureXRUIInputModule(GameObject eventSystemGo)
+    {
+        // 移除 StandaloneInputModule（与 XRUIInputModule 冲突）
+        StandaloneInputModule standalone = eventSystemGo.GetComponent<StandaloneInputModule>();
+        if (standalone != null)
+        {
+            Object.Destroy(standalone);
+        }
+
+        // 用反射添加 XRUIInputModule，避免 XRI 未导入时编译报错
+        const string xrUIInputModuleType =
+            "UnityEngine.XR.Interaction.Toolkit.UI.XRUIInputModule," +
+            "Unity.XR.Interaction.Toolkit";
+        System.Type t = System.Type.GetType(xrUIInputModuleType);
+        if (t != null && eventSystemGo.GetComponent(t) == null)
+        {
+            eventSystemGo.AddComponent(t);
+        }
+    }
+
+    private static bool IsXRActive()
+    {
+        return UnityEngine.XR.XRSettings.isDeviceActive
+            || UnityEngine.XR.XRSettings.loadedDeviceName.Length > 0;
     }
 
     public static GameObject CreateCanvasRoot(string name)
