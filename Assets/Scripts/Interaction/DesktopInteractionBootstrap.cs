@@ -8,6 +8,13 @@ namespace ParkClean.Interaction
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
         {
+            // VR 模式下由 VRInteractionBootstrap 接管，桌面端引导器退出
+            if (UnityEngine.XR.XRSettings.isDeviceActive
+                || UnityEngine.XR.XRSettings.loadedDeviceName.Length > 0)
+            {
+                return;
+            }
+
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             TryInstall();
