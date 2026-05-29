@@ -58,7 +58,7 @@ public static class WasteUiFactory
         EventSystem current = EventSystem.current;
         if (current != null)
         {
-            // VR 模式下：如果场景里已有 EventSystem，确保它有 XRUIInputModule
+            // VR 模式下：确保现有 EventSystem 有 XRUIInputModule，移除冲突的 StandaloneInputModule
             if (IsXRActive())
             {
                 EnsureXRUIInputModule(current.gameObject);
@@ -66,17 +66,16 @@ public static class WasteUiFactory
             return current.gameObject;
         }
 
+        // 没有 EventSystem 时才创建（正常情况下 XR Interaction Setup Prefab 已自带）
         GameObject eventSystem = new GameObject("EventSystem");
         eventSystem.AddComponent<EventSystem>();
 
         if (IsXRActive())
         {
-            // VR 模式：用 XRUIInputModule 处理手柄射线点击 UI
             EnsureXRUIInputModule(eventSystem);
         }
         else
         {
-            // 桌面模式：保持原有 StandaloneInputModule
             eventSystem.AddComponent<StandaloneInputModule>();
         }
 
