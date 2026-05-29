@@ -63,6 +63,56 @@ namespace ParkClean.Interaction
                         interactor.gameObject.AddComponent<VRGarbageInteractor>();
                     }
                 }
+
+                // XRDirectInteractor 需要一个 isTrigger=true 的 Collider，否则报警告
+                if (interactor is XRDirectInteractor)
+                {
+                    EnsureDirectInteractorCollider(interactor.gameObject);
+                }
+            }
+
+            // 禁用 TunnelingVignette（移动时的周边黑晕效果，容易造成眩晕感）
+            DisableTunnelingVignette();
+        }
+
+        private static void EnsureDirectInteractorCollider(GameObject go)
+        {
+            // 检查是否已有 isTrigger=true 的 Collider
+            Collider[] cols = go.GetComponents<Collider>();
+            foreach (Collider c in cols)
+            {
+                if (c.isTrigger) return;
+            }
+
+            // 添加一个小型球形 Trigger Collider（代表"手"的交互范围）
+            SphereCollider sc = go.AddComponent<SphereCollider>();
+            sc.isTrigger = true;
+            sc.radius = 0.1f;
+        }
+
+        private static void DisableTunnelingVignette()
+        {
+            // TunnelingVignette 是 XR Origin 下的子 GameObject
+            // 用名字查找并直接禁用
+            GameObject vignetteGo = GameObject.Find("TunnelingVignette");
+            if (vignetteGo != null)
+            {
+                vignetteGo.SetActive(false);
+                return;
+            }
+
+            // 备用：通过类型查找 TunnelingVignette 组件并禁用
+            const string typeName =
+                "Unity.XR.CoreUtils.TunnelingVignette," +
+                "Unity.XR.CoreUtils";
+            System.Type t = System.Type.GetType(typeName);
+            if (t != null)
+            {
+                Object comp = Object.FindObjectOfType(t);
+                if (comp is MonoBehaviour mb)
+                {
+                    mb.gameObject.SetActive(false);
+                }
             }
         }
 

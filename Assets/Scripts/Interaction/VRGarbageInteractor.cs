@@ -88,8 +88,11 @@ namespace ParkClean.Interaction
 
             if (_heldRigidbody != null)
             {
+                // 必须先设置 isKinematic = false 才能清零速度，否则报警告
+                _heldRigidbody.isKinematic = false;
                 _heldRigidbody.velocity = Vector3.zero;
                 _heldRigidbody.angularVelocity = Vector3.zero;
+                // 再切换为 Kinematic 用于手柄跟随（位置由 Update 直接设置）
                 _heldRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
                 _heldRigidbody.isKinematic = true;
                 _heldRigidbody.useGravity = false;
