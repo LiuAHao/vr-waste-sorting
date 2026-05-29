@@ -71,15 +71,64 @@ public static class WasteUiFactory
     {
         GameObject root = new GameObject(name);
         Canvas canvas = root.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 5000;
 
-        CanvasScaler scaler = root.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
-        scaler.matchWidthOrHeight = 0.5f;
+        bool isVR = UnityEngine.XR.XRSettings.isDeviceActive
+                 || UnityEngine.XR.XRSettings.loadedDeviceName.Length > 0;
 
-        root.AddComponent<GraphicRaycaster>();
+        if (isVR)
+        {
+            // VR 模式：World Space Canvas，放在玩家正前方
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.worldCamera = Camera.main;
+
+            // 缩放：原 1920x1080 UI 映射到约 1.92m x 1.08m 的世界空间面板
+            root.transform.localScale = Vector3.one * 0.001f;
+
+            // 初始位置：摄像机正前方 2.5m，稍微抬高
+            Camera cam = Camera.main;
+            if (cam != null)
+            {
+                Vector3 forward = cam.transform.forward;
+                forward.y = 0f;
+                if (forward.sqrMagnitude < 0.001f) forward = Vector3.forward;
+                forward.Normalize();
+                root.transform.position = cam.transform.position + forward * 2.5f + Vector3.up * 0.3f;
+                root.transform.rotation = Quaternion.LookRotation(forward);
+            }
+
+            // World Space 下用固定尺寸
+            CanvasScaler scaler = root.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
+
+            // 添加 TrackedDeviceGraphicRaycaster 支持手柄射线点击（用反射，避免 XRI 未导入时报错）
+            const string trackedRaycasterType =
+                "UnityEngine.XR.Interaction.Toolkit.UI.TrackedDeviceGraphicRaycaster," +
+                "Unity.XR.Interaction.Toolkit";
+            System.Type t = System.Type.GetType(trackedRaycasterType);
+            if (t != null)
+            {
+                root.AddComponent(t);
+            }
+            else
+            {
+                // XRI 未导入时退回普通 GraphicRaycaster
+                root.AddComponent<GraphicRaycaster>();
+            }
+        }
+        else
+        {
+            // 桌面模式：保持原有 Screen Space Overlay
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 5000;
+
+            CanvasScaler scaler = root.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            root.AddComponent<GraphicRaycaster>();
+        }
+
         Object.DontDestroyOnLoad(root);
         return root;
     }

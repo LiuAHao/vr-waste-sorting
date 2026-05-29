@@ -28,6 +28,8 @@ namespace ParkClean.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
         {
+            // WasteUiFactory.CreateCanvasRoot 已在创建时直接处理 VR/桌面分支，
+            // 本工具只负责转换场景里预先放置的、非代码生成的 Canvas（如果有的话）。
             if (!IsXRActive()) return;
 
             SceneManager.sceneLoaded -= HandleSceneLoaded;
