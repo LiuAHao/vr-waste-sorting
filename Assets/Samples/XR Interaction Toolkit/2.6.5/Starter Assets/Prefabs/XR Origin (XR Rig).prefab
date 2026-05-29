@@ -918,7 +918,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_System: {fileID: 1589979491555116479}
-  m_MoveSpeed: 1
+  m_MoveSpeed: 3
   m_EnableStrafe: 1
   m_EnableFly: 0
   m_UseGravity: 1
@@ -992,7 +992,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1470279098769358944}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2213c36610e3b1c4bbf886810ed9db12, type: 3}
   m_Name: 
@@ -1040,7 +1040,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_System: {fileID: 1589979491555116479}
-  m_TurnSpeed: 60
+  m_TurnSpeed: 90
   m_LeftHandTurnAction:
     m_UseReference: 1
     m_Action:

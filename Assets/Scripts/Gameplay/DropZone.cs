@@ -76,6 +76,19 @@ public class DropZone : MonoBehaviour
         return bestZone != null ? bestZone.Classify(item) : null;
     }
 
+    /// <summary>
+    /// 支持 VR 抛物入桶：物品飞入 Trigger 时自动判定分类。
+    /// 桌面模式下不会触发此回调（桌面抓取不使用物理飞入）。
+    /// </summary>
+    private void OnTriggerEnter(Collider other)
+    {
+        GarbageItem item = other.GetComponentInParent<GarbageItem>();
+        if (item == null) item = other.GetComponent<GarbageItem>();
+        if (item == null || item.IsHeld || item.IsCompleted) return;
+
+        Classify(item);
+    }
+
     private bool IsOverlapping(GarbageItem item)
     {
         if (_triggerCollider == null)

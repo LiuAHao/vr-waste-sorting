@@ -29,6 +29,10 @@ namespace ParkClean.Interaction
         private GarbageItem _heldItem;
         private Rigidbody _heldRigidbody;
 
+        // 追踪手柄每帧速度，用于松手时的抛出计算
+        private Vector3 _lastHandVelocity;
+        private Vector3 _prevHandPosition;
+
         // ── Unity 生命周期 ────────────────────────────────────────
 
         private void Awake()
@@ -50,6 +54,10 @@ namespace ParkClean.Interaction
 
         private void Update()
         {
+            // 持续记录手柄速度（无论是否持有物品），以便松手时用
+            _lastHandVelocity = (transform.position - _prevHandPosition) / Mathf.Max(Time.deltaTime, 0.001f);
+            _prevHandPosition = transform.position;
+
             if (_heldItem == null) return;
 
             // 如果垃圾在飞行途中已被判定完成（例如上一帧刚入桶），清空持有状态
@@ -102,14 +110,23 @@ namespace ParkClean.Interaction
                 _heldRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 _heldRigidbody.isKinematic = false;
                 _heldRigidbody.useGravity = true;
-                _heldRigidbody.velocity = Vector3.zero;
+
+                // VR 松手：施加手柄速度，让物品像真实投掷一样飞出
+                // 如果手柄几乎静止，给一个轻微向前下方的默认速度，避免物品悬停
+                Vector3 throwVelocity = _lastHandVelocity;
+                if (throwVelocity.magnitude < 0.5f)
+                {
+                    throwVelocity = transform.forward * 1.5f + Vector3.down * 1.0f;
+                }
+                _heldRigidbody.velocity = throwVelocity;
                 _heldRigidbody.angularVelocity = Vector3.zero;
             }
 
             releasedItem.SetHeld(false);
             ClearHeldState();
 
-            // 松手时触发分类判定 —— 与桌面端完全一致
+            // 先尝试一次即时判定（物品恰好在桶口时直接命中）
+            // 如果不在范围内，物品飞出后会被 DropZone.OnTriggerEnter 再次判定
             DropZone.TryClassifyReleasedItem(releasedItem);
         }
 
