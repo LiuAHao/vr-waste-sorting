@@ -125,7 +125,7 @@ public static class WasteUiFactory
             // 缩放：原 1920x1080 UI 映射到约 1.92m x 1.08m 的世界空间面板
             root.transform.localScale = Vector3.one * 0.001f;
 
-            // 初始位置：摄像机正前方 2.5m，稍微抬高
+            // 初始位置：摄像机正前方 2.5m，视线中央（轻微下偏）
             Camera cam = Camera.main;
             if (cam != null)
             {
@@ -133,7 +133,7 @@ public static class WasteUiFactory
                 forward.y = 0f;
                 if (forward.sqrMagnitude < 0.001f) forward = Vector3.forward;
                 forward.Normalize();
-                root.transform.position = cam.transform.position + forward * 2.5f + Vector3.up * 0.3f;
+                root.transform.position = cam.transform.position + forward * 2.5f + Vector3.up * (-0.1f);
                 root.transform.rotation = Quaternion.LookRotation(forward);
             }
 
@@ -155,6 +155,13 @@ public static class WasteUiFactory
                 // XRI 未导入时退回普通 GraphicRaycaster
                 root.AddComponent<GraphicRaycaster>();
             }
+
+            // 让 Canvas 跟随摄像机，确保玩家移动/转头后 UI 始终可见
+            VRCanvasFollower follower = root.AddComponent<VRCanvasFollower>();
+            follower.distance = 2.5f;
+            follower.verticalOffset = -0.1f;
+            follower.followAngleThreshold = 30f;
+            follower.followSpeed = 2f;
         }
         else
         {

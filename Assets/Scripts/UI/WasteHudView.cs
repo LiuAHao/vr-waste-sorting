@@ -65,6 +65,17 @@ public sealed class WasteHudView
     public void SetVisible(bool visible)
     {
         _root.SetActive(visible);
+
+        // VR 模式下，每次 HUD 变为可见时，强制将其对齐到摄像机正前方
+        // 确保玩家不需要四处寻找 HUD
+        if (visible)
+        {
+            VRCanvasFollower follower = _root.GetComponent<VRCanvasFollower>();
+            if (follower != null)
+            {
+                follower.SnapToCamera();
+            }
+        }
     }
 
     public void SetTimedChallengeStats(float remainingSeconds, int score, int processedCount)
