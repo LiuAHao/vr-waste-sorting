@@ -122,6 +122,11 @@ public static class WasteUiFactory
             canvas.renderMode = RenderMode.WorldSpace;
             canvas.worldCamera = Camera.main;
 
+            // 设置 Canvas RectTransform 的参考尺寸（1920x1080），
+            // 让使用相对锚点的 UI 元素（如 HUD TopBar）能正确计算高度
+            RectTransform canvasRect = root.GetComponent<RectTransform>();
+            canvasRect.sizeDelta = new Vector2(1920f, 1080f);
+
             // 缩放：原 1920x1080 UI 映射到约 1.92m x 1.08m 的世界空间面板
             root.transform.localScale = Vector3.one * 0.001f;
 
