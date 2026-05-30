@@ -29,27 +29,27 @@ public sealed class WastePauseView
         RectTransform panelRect = panel.rectTransform;
         panelRect.anchorMin = new Vector2(0.5f, 0.5f);
         panelRect.anchorMax = new Vector2(0.5f, 0.5f);
-        panelRect.sizeDelta = new Vector2(760f, 280f);
+        panelRect.sizeDelta = new Vector2(900f, 400f);
 
-        Text titleText = WasteUiFactory.CreateText("Title", panel.transform, "已暂停", 42, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
-        SetRect(titleText.rectTransform, new Vector2(24f, -82f), new Vector2(-24f, -22f), new Vector2(0f, 1f), new Vector2(1f, 1f));
+        Text titleText = WasteUiFactory.CreateText("Title", panel.transform, "已暂停", 48, FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
+        SetRect(titleText.rectTransform, new Vector2(24f, -100f), new Vector2(-24f, -24f), new Vector2(0f, 1f), new Vector2(1f, 1f));
 
-        Text detailText = WasteUiFactory.CreateText("Detail", panel.transform, "按 Esc 可继续游戏，或直接返回主菜单。", 22, FontStyle.Normal, TextAnchor.MiddleCenter, new Color(0.88f, 0.93f, 0.94f, 1f));
-        SetRect(detailText.rectTransform, new Vector2(28f, -138f), new Vector2(-28f, -92f), new Vector2(0f, 1f), new Vector2(1f, 1f));
+        Text detailText = WasteUiFactory.CreateText("Detail", panel.transform, "按 X 键可继续游戏，或直接返回主菜单。", 26, FontStyle.Normal, TextAnchor.MiddleCenter, new Color(0.88f, 0.93f, 0.94f, 1f));
+        SetRect(detailText.rectTransform, new Vector2(28f, -180f), new Vector2(-28f, -110f), new Vector2(0f, 1f), new Vector2(1f, 1f));
 
         Button resumeButton = WasteUiFactory.CreateButton("ResumeButton", panel.transform, "返回游戏", new Color(0.2f, 0.52f, 0.62f, 1f), Color.white, null);
         RectTransform resumeRect = resumeButton.GetComponent<RectTransform>();
         resumeRect.anchorMin = new Vector2(0.5f, 0f);
         resumeRect.anchorMax = new Vector2(0.5f, 0f);
-        resumeRect.sizeDelta = new Vector2(240f, 64f);
-        resumeRect.anchoredPosition = new Vector2(-138f, 34f);
+        resumeRect.sizeDelta = new Vector2(360f, 90f);
+        resumeRect.anchoredPosition = new Vector2(-200f, 60f);
 
         Button backToMenuButton = WasteUiFactory.CreateButton("BackToMenuButton", panel.transform, "返回主菜单", new Color(0.27f, 0.31f, 0.37f, 1f), Color.white, null);
         RectTransform backRect = backToMenuButton.GetComponent<RectTransform>();
         backRect.anchorMin = new Vector2(0.5f, 0f);
         backRect.anchorMax = new Vector2(0.5f, 0f);
-        backRect.sizeDelta = new Vector2(240f, 64f);
-        backRect.anchoredPosition = new Vector2(138f, 34f);
+        backRect.sizeDelta = new Vector2(360f, 90f);
+        backRect.anchoredPosition = new Vector2(200f, 60f);
 
         root.SetActive(false);
         return new WastePauseView(root, resumeButton, backToMenuButton);
