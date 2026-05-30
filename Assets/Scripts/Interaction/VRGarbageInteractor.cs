@@ -21,8 +21,11 @@ namespace ParkClean.Interaction
         [Tooltip("抓取时物品跟随手柄的速度（Lerp）。0 = 瞬移，越大越快")]
         [SerializeField] private float followSpeed = 20f;
 
-        [Tooltip("抓取后把物品对齐到手柄前方多少距离（仅射线模式生效）")]
-        [SerializeField] private float holdDistance = 0.4f;
+        [Tooltip("抓取后物品距离摄像机（头部）的固定距离（米）")]
+        [SerializeField] private float holdDistanceFromCamera = 0.6f;
+
+        [Tooltip("抓取后物品相对摄像机的高度偏移（米，负值=往下）")]
+        [SerializeField] private float holdVerticalOffset = -0.2f;
         // ─────────────────────────────────────────────────────────
 
         private XRBaseInteractor _xrInteractor;
@@ -135,17 +138,31 @@ namespace ParkClean.Interaction
 
         // ── 辅助方法 ──────────────────────────────────────────────
 
-        /// <summary>计算持有点世界坐标。射线模式取手柄前方，直接抓取模式取手柄本身。</summary>
+        /// <summary>
+        /// 计算持有点世界坐标。
+        /// 固定在摄像机（头部）正前方，确保：
+        ///   1. 不管射线打到哪里，抓取后距离一致（不会太远或太近）
+        ///   2. 转视角时物品跟随头部，不会因为 XR Origin 旋转而飘走
+        /// </summary>
         private Vector3 GetHoldPosition()
         {
-            // 如果是 XRRayInteractor，从射线原点沿方向偏移
-            if (_xrInteractor is XRRayInteractor rayInteractor)
+            Camera cam = Camera.main;
+            if (cam == null)
             {
-                return transform.position + transform.forward * holdDistance;
+                // 摄像机未初始化时退回手柄位置
+                return transform.position + transform.forward * 0.5f;
             }
 
-            // XRDirectInteractor：直接跟随手柄位置
-            return transform.position;
+            // 摄像机前方水平方向（忽略俯仰角，避免低头时物品掉到地上）
+            Vector3 camForward = cam.transform.forward;
+            camForward.y = 0f;
+            if (camForward.sqrMagnitude < 0.001f) camForward = Vector3.forward;
+            camForward.Normalize();
+
+            // 固定在摄像机前方 + 轻微下偏（视线中下方，不挡视野）
+            return cam.transform.position
+                + camForward * holdDistanceFromCamera
+                + Vector3.up * holdVerticalOffset;
         }
 
         private static GarbageItem ResolveGarbageItem(Transform t)
