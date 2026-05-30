@@ -60,6 +60,13 @@ public sealed class WastePauseView
         _root.SetActive(true);
         BindButton(_resumeButton, resumeAction);
         BindButton(_backToMenuButton, backToMenuAction);
+
+        // VR 模式下，强制将暂停菜单对齐到摄像机正前方
+        VRCanvasFollower follower = _root.GetComponent<VRCanvasFollower>();
+        if (follower != null)
+        {
+            follower.SnapToCamera();
+        }
     }
 
     public void Hide()

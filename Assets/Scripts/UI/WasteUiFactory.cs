@@ -153,13 +153,23 @@ public static class WasteUiFactory
             System.Type t = System.Type.GetType(trackedRaycasterType);
             if (t != null)
             {
-                root.AddComponent(t);
+                Component raycaster = root.AddComponent(t);
+                // 设置 maxRaycastDistance 为一个较大的值，确保能射到 Canvas
+                System.Reflection.PropertyInfo maxDistProp = t.GetProperty("maxRaycastDistance");
+                if (maxDistProp != null && maxDistProp.CanWrite)
+                {
+                    maxDistProp.SetValue(raycaster, 10f);
+                }
             }
             else
             {
                 // XRI 未导入时退回普通 GraphicRaycaster
                 root.AddComponent<GraphicRaycaster>();
             }
+
+            // 确保 Canvas 在 Default Layer（Layer 0），让 XR Ray Interactor 能检测到
+            root.layer = 0;
+            SetLayerRecursively(root.transform, 0);
 
             // 让 Canvas 跟随摄像机，确保玩家移动/转头后 UI 始终可见
             VRCanvasFollower follower = root.AddComponent<VRCanvasFollower>();
@@ -184,6 +194,16 @@ public static class WasteUiFactory
 
         Object.DontDestroyOnLoad(root);
         return root;
+    }
+
+    /// <summary>递归设置 GameObject 及其所有子物体的 Layer</summary>
+    private static void SetLayerRecursively(Transform trans, int layer)
+    {
+        trans.gameObject.layer = layer;
+        for (int i = 0; i < trans.childCount; i++)
+        {
+            SetLayerRecursively(trans.GetChild(i), layer);
+        }
     }
 
     public static void HideLegacySceneUi()
