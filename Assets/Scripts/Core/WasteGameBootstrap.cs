@@ -84,24 +84,17 @@ public sealed class WasteGameBootstrap : MonoBehaviour
     /// <summary>检测 VR 手柄的 Menu 按钮（PICO4 / Oculus Touch）</summary>
     private bool IsVRMenuButtonPressed()
     {
-        // 检测左手或右手的 Menu 按钮（通常是左手柄上的三横线按钮）
+        // 检测左手柄的 X 按钮（primaryButton）
         InputDevice leftHand = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-        InputDevice rightHand = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
 
-        bool leftMenuPressed = false;
-        bool rightMenuPressed = false;
+        bool xButtonPressed = false;
 
         if (leftHand.isValid)
         {
-            leftHand.TryGetFeatureValue(CommonUsages.menuButton, out leftMenuPressed);
+            leftHand.TryGetFeatureValue(CommonUsages.primaryButton, out xButtonPressed);
         }
 
-        if (rightHand.isValid)
-        {
-            rightHand.TryGetFeatureValue(CommonUsages.menuButton, out rightMenuPressed);
-        }
-
-        return leftMenuPressed || rightMenuPressed;
+        return xButtonPressed;
     }
 
     private void Update()

@@ -10,8 +10,8 @@ namespace ParkClean.Interaction
     /// 通过 Prefab 预先放置，本脚本只做以下两件事：
     ///   1. 在场景加载后，找到场景中的 XRBaseInteractor（左右手），
     ///      为每个 Interactor 挂载 VRGarbageInteractor 组件（若不存在）。
-    ///   2. 为场景中所有垃圾物品的 Rigidbody 配置合理的物理参数，
-    ///      保证 VR 环境下不穿模。
+    ///   2. 为场景中所有垃圾物品添加 XRGrabInteractable 组件，并配置为
+    ///      Kinematic 模式 + 禁用 Attach Transform，防止物品被 parent 到手柄下。
     ///
     /// 注意：本脚本使用 [RuntimeInitializeOnLoadMethod] 在不需要手动
     /// 挂载到任何 GameObject 的情况下自动运行，与 DesktopInteractionBootstrap
@@ -71,8 +71,41 @@ namespace ParkClean.Interaction
                 }
             }
 
+            // 给所有垃圾物品添加 XRGrabInteractable 组件（如果没有的话）
+            // 并配置为 Kinematic 模式，禁用 Attach Transform（防止自动 parent）
+            SetupGarbageItemsForVR();
+
             // 禁用 TunnelingVignette（移动时的周边黑晕效果，容易造成眩晕感）
             DisableTunnelingVignette();
+        }
+
+        private static void SetupGarbageItemsForVR()
+        {
+            // 找场景中所有 GarbageItem
+            GarbageItem[] items = Object.FindObjectsOfType<GarbageItem>(true);
+            foreach (GarbageItem item in items)
+            {
+                if (item == null) continue;
+
+                // 如果已经有 XRGrabInteractable，跳过
+                if (item.GetComponent<XRGrabInteractable>() != null) continue;
+
+                // 添加 XRGrabInteractable 组件
+                XRGrabInteractable grabInteractable = item.gameObject.AddComponent<XRGrabInteractable>();
+
+                // 关键配置：使用 Kinematic 模式，物品位置完全由我们的代码控制
+                grabInteractable.movementType = XRBaseInteractable.MovementType.Kinematic;
+
+                // 禁用 Attach Transform（防止 XRI 自动把物品 parent 到手柄下）
+                grabInteractable.attachTransform = null;
+
+                // 禁用平滑移动（我们在 VRGarbageInteractor 里自己做 Lerp）
+                grabInteractable.smoothPosition = false;
+                grabInteractable.smoothRotation = false;
+
+                // 禁用投掷（我们在 VRGarbageInteractor 里自己计算投掷速度）
+                grabInteractable.throwOnDetach = false;
+            }
         }
 
         private static void EnsureDirectInteractorCollider(GameObject go)
