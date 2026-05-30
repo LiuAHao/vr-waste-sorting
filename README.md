@@ -49,45 +49,6 @@
 
 ---
 
-## 打包为 APK（PICO4 独立运行）
-
-> 如需脱离 PC 串流、直接将游戏安装到 PICO4 本体，请按以下步骤操作。
-
-### 1. 安装 PICO Unity Integration SDK
-
-1. 前往 [PICO Developer](https://developer-global.pico-interactive.com/sdk) 下载 Unity 版 SDK
-2. 通过 **Package Manager → Add package from tarball** 导入
-
-### 2. 切换构建平台
-
-**File → Build Settings** → 选择 **Android** → **Switch Platform**
-
-### 3. 配置 Player Settings（Android 标签页）
-
-| 选项 | 设置 |
-|---|---|
-| Package Name | `com.yourcompany.wastesorting`（改为你的包名）|
-| Minimum API Level | Android 10.0（API 29）|
-| Scripting Backend | **IL2CPP** |
-| Target Architectures | 仅勾选 **ARM64** |
-| Graphics API | 保留 **OpenGLES3**（移除 Vulkan 可提高兼容性）|
-
-### 4. 配置 XR Plug-in Management（Android 标签页）
-
-- 勾选 **OpenXR**
-- Interaction Profiles 里添加 **PICO Touch Controller Profile**
-- Feature Groups 里勾选 **PICO Feature Set**
-
-### 5. 构建
-
-**File → Build Settings → Build**，生成 APK 后通过 ADB 或文件管理器安装到 PICO4
-
-```bash
-adb install -r YourGame.apk
-```
-
----
-
 ## 项目结构（VR 分支关键文件）
 
 ```
