@@ -1,49 +1,172 @@
-# ParkClean VR 垃圾分类小游戏
+# ParkClean — VR 垃圾分类小游戏
 
-ParkClean VR 是一个基于 Unity 的垃圾分类教育小游戏。项目当前由“清扫社区”Demo 重构而来，目标是把原本简单的拾取、清理、计数玩法升级为“观察垃圾、抓取垃圾、判断类别、投入垃圾桶、获得反馈、查看复盘”的完整垃圾分类体验。
+**ParkClean** 是一个基于 Unity 的垃圾分类教育 VR 小游戏。玩家置身于校园场景中，通过 VR 手柄拾取散落的垃圾，按照可回收物、有害垃圾、厨余垃圾、其他垃圾四大类别投入对应的垃圾桶，并在计时结束后查看正确率和复盘。
 
-当前工程已经先完成了一个桌面端可演示 MVP，用于验证核心玩法闭环；后续再继续向 VR 交互适配演进。
+---
 
-## 当前核心体验
+## 分支说明
 
-- 进入校园或社区生活场景。
-- 通过桌面端抓取交互拿起垃圾并移动。
-- 根据垃圾外观、材质、污染程度和生活语境判断分类。
-- 将垃圾释放到可回收物、有害垃圾、厨余垃圾、其他垃圾四类垃圾桶区域。
-- 系统在松手时判定正误，正误都会给出文字反馈并计入进度。
-- 垃圾判定后直接消失，避免重复拾取和重复计分。
-- 任务结束后展示用时、正确率、得分、错误物品和复盘信息。
+| 分支 | 说明 |
+|---|---|
+| `main` | 桌面端（键鼠）完整可玩版本，作为原始 MVP 保留 |
+| `VRadjustment` | **VR 适配版本**（本分支），面向 PICO4 等 OpenXR 头显 |
 
-## 当前 MVP 范围
+---
 
-首个可演示版本聚焦一个稳定闭环：
+## 运行环境
 
-- 1 个校园食堂或社区投放点场景。
-- 1 组四分类垃圾桶。
-- 约 12 个高频垃圾物品，每类 3 个。
-- 开始页、抓取、移动、松手判定、反馈、结算。
-- 倒计时、目标进度、得分、结算页和错误复盘。
-- 本地记录正确率、用时、错误类型等基础数据。
+| 条件 | 要求 |
+|---|---|
+| Unity | 2022.3 LTS（推荐 2022.3.62f1）|
+| XR 插件 | XR Interaction Toolkit 2.6.5、OpenXR Plugin |
+| 头显 | PICO4（Oculus Touch Controller Profile）|
+| 连接方式 | PICO Link 串流（PC 运行） 或 打包 APK 独立运行 |
+| 平台 | PC（Windows / macOS）+ SteamVR，或 Android Standalone |
 
-## 当前工程基础
+---
 
-- 引擎：Unity。
-- 语言：C#。
-- 当前玩法基础：已有清扫计数、倒计时、胜负面板、场景切换等早期脚本。
-- 资产基础：城市场景资源、低多边形垃圾素材、四分类垃圾桶 GLB 模型、声音素材。
-- 设计基础：`docs/design` 下已有总体设计、MVP 设计、模块拆分和建模清单。
+## 快速开始（PC 串流，推荐开发调试）
 
-## 文档入口
+1. 在 Unity 编辑器中打开 `Assets/Scenes/2.unity`
+2. 确认 **Project Settings → XR Plug-in Management** 已勾选 **OpenXR**
+3. 确认 **OpenXR → Interaction Profiles** 已添加 **Oculus Touch Controller Profile**
+4. 连接 PICO4（开启 PICO Link 串流，SteamVR 检测到头显）
+5. 点击 Unity **Play**，戴上 PICO4 即可游玩
 
-- [产品需求文档 PRD](docs/PRD.md)
-- [项目结构设计大纲](docs/PROJECT_STRUCTURE.md)
-- [总体设计文档](docs/design/VR垃圾分类小游戏总体设计文档.md)
-- [MVP 设计方案](docs/design/MVP设计方案.md)
-- [AI 生成 3D 模型并导入 Unity](docs/使用AI生成3D模型并导入Unity.md)
+---
 
-## 推荐开发方向
+## VR 操作说明
 
-1. 将现有“点击清扫垃圾”逻辑重构为“垃圾物品 + 分类属性 + 垃圾桶判定”逻辑。
-2. 用数据配置管理垃圾名称、类别、难度、解释文案和模型引用。
-3. 先完成非联网本地 Demo，再逐步补充 VR 交互、动画反馈、数据分析和多场景扩展。
-4. 保持低眩晕、高帧率和轻量化资源策略，优先保障后续 VR 体验稳定。
+| 操作 | 绑定 |
+|---|---|
+| **移动** | 左手柄摇杆（前/后/左/右平移）|
+| **转视角** | 右手柄摇杆（左右连续旋转）|
+| **选中垃圾** | 右手柄射线瞄准垃圾（射线变蓝+手柄震动）|
+| **抓取垃圾** | 右手柄 Grip 键（抓握键）|
+| **松手/投放** | 松开 Grip 键（垃圾会以手柄速度飞出，飞入桶口自动判定）|
+| **呼出/关闭暂停菜单** | 左手柄 **X 键** |
+| **点击 UI 按钮** | 手柄射线瞄准后按 **Trigger 键** |
+
+---
+
+## 打包为 APK（PICO4 独立运行）
+
+> 如需脱离 PC 串流、直接将游戏安装到 PICO4 本体，请按以下步骤操作。
+
+### 1. 安装 PICO Unity Integration SDK
+
+1. 前往 [PICO Developer](https://developer-global.pico-interactive.com/sdk) 下载 Unity 版 SDK
+2. 通过 **Package Manager → Add package from tarball** 导入
+
+### 2. 切换构建平台
+
+**File → Build Settings** → 选择 **Android** → **Switch Platform**
+
+### 3. 配置 Player Settings（Android 标签页）
+
+| 选项 | 设置 |
+|---|---|
+| Package Name | `com.yourcompany.wastesorting`（改为你的包名）|
+| Minimum API Level | Android 10.0（API 29）|
+| Scripting Backend | **IL2CPP** |
+| Target Architectures | 仅勾选 **ARM64** |
+| Graphics API | 保留 **OpenGLES3**（移除 Vulkan 可提高兼容性）|
+
+### 4. 配置 XR Plug-in Management（Android 标签页）
+
+- 勾选 **OpenXR**
+- Interaction Profiles 里添加 **PICO Touch Controller Profile**
+- Feature Groups 里勾选 **PICO Feature Set**
+
+### 5. 构建
+
+**File → Build Settings → Build**，生成 APK 后通过 ADB 或文件管理器安装到 PICO4
+
+```bash
+adb install -r YourGame.apk
+```
+
+---
+
+## 项目结构（VR 分支关键文件）
+
+```
+Assets/
+├── Scenes/
+│   └── 2.unity                      # 唯一游戏场景
+├── Scripts/
+│   ├── Core/
+│   │   └── WasteGameBootstrap.cs    # 游戏主引导，所有 UI / 流程在此初始化
+│   ├── Gameplay/
+│   │   ├── GarbageItem.cs           # 垃圾物品逻辑（可持有状态、分类属性）
+│   │   └── DropZone.cs              # 垃圾桶投放区触发判定
+│   ├── Interaction/
+│   │   ├── VRGarbageInteractor.cs   # VR 抓取桥接：XRI Select 事件 → 游戏逻辑
+│   │   ├── VRInteractionBootstrap.cs# VR 自动初始化：挂载 Interactor、配置物品
+│   │   └── DesktopInteractionBootstrap.cs # 桌面端（已在 VR 下禁用）
+│   └── UI/
+│       ├── WasteUiFactory.cs        # UI 工厂（VR 模式自动创建 World Space Canvas）
+│       ├── VRCanvasFollower.cs      # Canvas 跟随摄像机，始终保持在视野内
+│       ├── WasteHudView.cs          # 游戏局内 HUD（时间/得分/进度/投放反馈）
+│       └── WastePauseView.cs        # 暂停菜单
+├── Samples/XR Interaction Toolkit/2.6.5/Starter Assets/
+│   ├── Prefabs/
+│   │   ├── XR Interaction Setup.prefab  # 场景中的 XR Rig（XR Origin + 手柄 + 交互管理器）
+│   │   └── XR Origin (XR Rig).prefab   # XR Origin 主 Prefab（移动速度、转向、重力等配置）
+│   └── Scripts/
+│       └── ActionBasedControllerManager.cs  # 控制平滑转向模式
+└── XR/
+    └── Settings/
+        └── OpenXR Package Settings.asset    # OpenXR 配置（Oculus Touch Controller Profile）
+```
+
+---
+
+## VR 适配技术说明
+
+### 架构设计原则
+
+本次 VR 适配遵循**最小侵入原则**：桌面端游戏逻辑（`GarbageItem`、`DropZone`、所有游戏模式控制器）**完全未修改**，所有 VR 特化逻辑通过新增文件和装饰模式叠加实现。
+
+### 关键改动
+
+#### 1. XR Rig（`XR Origin (XR Rig).prefab`）
+- 移动速度：`m_MoveSpeed = 5`
+- 转向模式：`ActionBasedControllerManager.m_SmoothTurnEnabled = 1`（平滑转向，替代原来的固定角度 Snap Turn）
+- 重力：`m_UseGravity = 0`（PICO4 使用 Floor 追踪，无需重力模拟）
+- 转速：`ContinuousTurnProvider.m_TurnSpeed = 90`
+
+#### 2. VR 抓取交互（`VRGarbageInteractor.cs`）
+- 监听 `XRRayInteractor` 和 `XRDirectInteractor` 的 Select 事件
+- 抓取时物品锁定在**摄像机前方固定距离（0.6m）**，不跟随手柄旋转
+- 松手时根据手柄速度计算抛出物理，配合 `DropZone.OnTriggerEnter` 触发投放判定
+- 追踪手柄速度用于投掷（每帧 `Update` 计算）
+
+#### 3. VR UI 系统（`WasteUiFactory.cs` + `VRCanvasFollower.cs`）
+- 检测 `XRSettings.isDeviceActive`，VR 模式下自动将所有 Canvas 切换为 **World Space**
+- Canvas 参考尺寸设为 `1920×1080`，缩放 `0.001`，映射为约 1.92m × 1.08m 的空间面板
+- 每个 Canvas 挂载 `VRCanvasFollower`：玩家转头超过 30° 后 Canvas 平滑跟随
+- 界面激活（`Show()`/`SetVisible(true)`）时调用 `SnapToCamera()` 立即对齐到视野中央
+
+#### 4. 投放判定（`DropZone.cs`）
+新增 `OnTriggerEnter` 回调，支持垃圾飞入垃圾桶后物理触发判定（兼容 VR 投掷场景）
+
+#### 5. 暂停系统（`WasteGameBootstrap.cs`）
+- 左手柄 **X 键**（`CommonUsages.primaryButton`）呼出/关闭暂停菜单
+- 使用上升沿检测（`currentPressed && !wasPressed`）避免连续触发
+
+#### 6. TunnelingVignette 禁用
+移动时的周边黑晕效果容易造成眩晕，在 `VRInteractionBootstrap.TryInstall()` 中运行时禁用
+
+---
+
+## 文档目录
+
+| 文档 | 内容 |
+|---|---|
+| [产品需求文档 PRD](docs/PRD.md) | 功能范围、验收标准 |
+| [项目结构大纲](docs/PROJECT_STRUCTURE.md) | 工程结构、模块划分 |
+| [总体设计文档](docs/design/VR垃圾分类小游戏总体设计文档.md) | 完整体验设计背景 |
+| [MVP 设计方案](docs/design/MVP设计方案.md) | 首个版本具体玩法取舍 |
+| [AI 生成 3D 模型并导入 Unity](docs/使用AI生成3D模型并导入Unity.md) | 资产制作流程 |
+| [v1 技术实现文档](docs/v1/) | 各游戏模式技术细节 |
