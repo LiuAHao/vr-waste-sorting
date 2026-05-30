@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.XR;
 
 public sealed class WasteGameBootstrap : MonoBehaviour
 {
@@ -80,9 +81,35 @@ public sealed class WasteGameBootstrap : MonoBehaviour
         BindCurrentScene();
     }
 
+    /// <summary>检测 VR 手柄的 Menu 按钮（PICO4 / Oculus Touch）</summary>
+    private bool IsVRMenuButtonPressed()
+    {
+        // 检测左手或右手的 Menu 按钮（通常是左手柄上的三横线按钮）
+        InputDevice leftHand = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+        InputDevice rightHand = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+
+        bool leftMenuPressed = false;
+        bool rightMenuPressed = false;
+
+        if (leftHand.isValid)
+        {
+            leftHand.TryGetFeatureValue(CommonUsages.menuButton, out leftMenuPressed);
+        }
+
+        if (rightHand.isValid)
+        {
+            rightHand.TryGetFeatureValue(CommonUsages.menuButton, out rightMenuPressed);
+        }
+
+        return leftMenuPressed || rightMenuPressed;
+    }
+
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        // 键盘 ESC 或 VR 手柄 Menu 键触发暂停
+        bool pausePressed = Input.GetKeyDown(KeyCode.Escape) || IsVRMenuButtonPressed();
+
+        if (pausePressed)
         {
             if (_freePlayController != null && _freePlayController.IsSessionActive)
             {

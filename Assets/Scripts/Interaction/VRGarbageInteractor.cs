@@ -101,6 +101,11 @@ namespace ParkClean.Interaction
                 _heldRigidbody.useGravity = false;
             }
 
+            // 关键修复：解除 XRI 自动设置的父子关系
+            // XRI 默认会把物品 parent 到 Interactor 下，导致物品跟随手柄的所有变换
+            // 我们需要物品停留在世界空间，只通过 Update 里的位置计算来跟随
+            _heldItem.transform.SetParent(null);
+
             _heldItem.SetHeld(true);
         }
 
